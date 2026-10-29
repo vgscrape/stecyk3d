@@ -8,6 +8,7 @@ Newest first.
 
 - The Rendered viewport no longer looks washed out until the first F12: the scene is set to the Raw view transform (look None, dithering 0) when the viewport first starts on it, and when a Bryce document is imported. Blender's Color Management panel is now shown with the Stecyk3D engine.
 - The Material tab's Texture components panel and the per-channel mix rows no longer stop with an error when a texture or mix comes through a node group.
+- Trees grown from Tree Lab settings stand where their objects are; they all stood at the world origin. The renderer now reads an object's place from the fourth column of the matrix a description gives (it read the fourth row, which holds no place), so a tree or shape given only `matrix` moves too.
 
 ### Name
 
