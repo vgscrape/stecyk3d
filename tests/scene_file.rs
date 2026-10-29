@@ -2,7 +2,8 @@
 // Tests of the composite-file reader on files built to the layouts.
 // (Tests)
 
-use stecyk3d::scene_file::{Container, ContainerError, Flavour, ResourceIndex};
+use stecyk3d::scene_file::{Container, ContainerError, Flavour, IndexError, ResourceIndex};
+use stecyk3d::scene_library::{Library, LibraryKind};
 
 /// Builds composite files: a header, then pieces appended at the end.
 struct Builder {
@@ -175,19 +176,28 @@ fn resource_row(identity: u32, e1: u32, e2: u32, name: &[u8]) -> Vec<u8> {
     r
 }
 
+/// A descriptor (of the class list or of a class): record length, room, growth, count.
+fn descriptor(record_len: u32, count: u32) -> Vec<u8> {
+    let mut d = vec![0u8; 32];
+    d[0..4].copy_from_slice(&record_len.to_be_bytes());
+    d[4..8].copy_from_slice(&16u32.to_be_bytes());
+    d[8..12].copy_from_slice(&16u32.to_be_bytes());
+    d[12..16].copy_from_slice(&count.to_be_bytes());
+    d
+}
+
 #[test]
 fn reads_resource_index() {
     let mut entries: Vec<Option<Vec<u8>>> = vec![None; 20];
-    let mut list = class_record(b"Abcd\0junk", 17, 18);
+    let mut list = class_record(b"Abcd\0junk", 18, 19);
     list.extend(class_record(b"", 0, 0)); // no class
     entries[16] = Some(list);
+    entries[17] = Some(descriptor(32, 2));
     let mut table = resource_row(7, 1, 2, b"First");
     table.extend(resource_row(9, 3, 4, b"Second\0rest"));
     table.extend(resource_row(11, 5, 6, b"room only")); // beyond the count
-    entries[17] = Some(table);
-    let mut desc = vec![0u8; 32];
-    desc[12..16].copy_from_slice(&2u32.to_be_bytes());
-    entries[18] = Some(desc);
+    entries[18] = Some(table);
+    entries[19] = Some(descriptor(60, 2));
     let f = Builder::new().finish(&entries);
 
     let c = Container::parse(&f, Flavour::Bryce3d).unwrap();
@@ -198,4 +208,80 @@ fn reads_resource_index() {
     assert_eq!(class.resources[0].identity, 7);
     assert_eq!(class.resources[0].entries, [1, 2]);
     assert_eq!(class.resources[1].name, b"Second");
+}
+
+#[test]
+fn class_records_past_the_class_lists_count_are_not_read() {
+    // A user library whose presets were deleted (Bryce 5.0's Materials/User/User.mat): one class in
+    // the list's count, then records of removed classes naming freed entries; and Textures/User/User.brt:
+    // no class, its leftover records naming entries past the directory.
+    let mut entries: Vec<Option<Vec<u8>>> = vec![None; 40];
+    let mut list = class_record(b"Abcd", 18, 19);
+    list.extend(class_record(b"CPresetDescr\0x", 32, 33));
+    list.extend(class_record(b"txtpresetdesc", 0x1a00_0000, 0x1b00_0000));
+    entries[16] = Some(list);
+    entries[17] = Some(descriptor(32, 1));
+    entries[18] = Some(resource_row(7, 1, 2, b"First"));
+    entries[19] = Some(descriptor(60, 1));
+    let f = Builder::new().finish(&entries);
+    let c = Container::parse(&f, Flavour::Bryce3d).unwrap();
+    let idx = ResourceIndex::read(&c).unwrap();
+    assert_eq!(idx.classes.len(), 1);
+    assert_eq!(idx.class(b"Abcd").unwrap().resources.len(), 1);
+    assert!(idx.class(b"CPresetDescr").is_none());
+
+    entries[17] = Some(descriptor(32, 0));
+    let f = Builder::new().finish(&entries);
+    let idx = ResourceIndex::read(&Container::parse(&f, Flavour::Bryce3d).unwrap()).unwrap();
+    assert!(idx.classes.is_empty());
+
+    // Within the count the same records are damage, as before.
+    entries[17] = Some(descriptor(32, 3));
+    let f = Builder::new().finish(&entries);
+    let c = Container::parse(&f, Flavour::Bryce3d).unwrap();
+    assert_eq!(ResourceIndex::read(&c), Err(IndexError::ShortDescriptor { class: 1 }));
+}
+
+#[test]
+fn rejects_a_class_list_its_descriptor_does_not_fit() {
+    let mut entries: Vec<Option<Vec<u8>>> = vec![None; 20];
+    entries[16] = Some(class_record(b"Abcd", 18, 19));
+    entries[17] = Some(vec![0u8; 15]);
+    let f = Builder::new().finish(&entries);
+    let c = Container::parse(&f, Flavour::Bryce3d).unwrap();
+    assert_eq!(ResourceIndex::read(&c), Err(IndexError::ShortClassListDescriptor));
+    entries[17] = Some(descriptor(32, 2));
+    let f = Builder::new().finish(&entries);
+    let c = Container::parse(&f, Flavour::Bryce3d).unwrap();
+    assert_eq!(ResourceIndex::read(&c), Err(IndexError::ShortClassList { count: 2, held: 32 }));
+    assert_eq!(
+        ResourceIndex::read(&c).unwrap_err().to_string(),
+        "damaged document: the class list holds 32 bytes, too few for 2 classes"
+    );
+}
+
+/// An empty library: the class list names no class.
+fn empty_library() -> Vec<u8> {
+    let mut entries: Vec<Option<Vec<u8>>> = vec![None; 20];
+    entries[16] = Some(class_record(b"txtpresetdesc", 0x1a00_0000, 0x1b00_0000));
+    entries[17] = Some(descriptor(32, 0));
+    Builder::new().finish(&entries)
+}
+
+#[test]
+fn a_library_may_begin_with_blanks_as_the_tree_labs_do() {
+    // Bryce 5's Tree Lab libraries (Leaves.mat, Trunks.mat) begin with 94 blanks, not CCmF.
+    let mut f = empty_library();
+    f[..94].fill(b' ');
+    f[94..98].copy_from_slice(b"CCmF");
+    for kind in [LibraryKind::Materials, LibraryKind::Textures] {
+        assert!(Library::read(&f, kind).unwrap().presets.is_empty());
+        assert!(Library::read(&empty_library(), kind).unwrap().presets.is_empty());
+    }
+    let mut not = f.clone();
+    not[0] = b'X';
+    assert_eq!(
+        Library::read(&not, LibraryKind::Materials).unwrap_err().to_string(),
+        "not a scene document: it begins neither with CCmF nor (Bryce 5) with 94 blanks"
+    );
 }

@@ -100,8 +100,10 @@ impl Library {
     /// (a preset's record that cannot be read is
     /// `PresetData::Unreadable`: the library's other presets stay usable, Errors). A library with no row of its preset class holds no presets.
     pub fn read(file: &[u8], kind: LibraryKind) -> Result<Library, SceneError> {
-        // The libraries start with CCmF ('s first form).
-        let container = Container::parse(file, Flavour::Bryce3d)?;
+        // Most libraries start with CCmF ('s first form); Bryce 5's Tree Lab libraries (Leaves.mat,
+        // Trunks.mat) with 94 blanks, the second form, and are otherwise laid out as the others.
+        // Flavour::Bryce5 accepts either start.
+        let container = Container::parse(file, Flavour::Bryce5)?;
         let index = ResourceIndex::read(&container)?;
         let doc = Doc { container: &container, index: &index, reading: crate::scene::Reading::Normal };
         let preset_class = kind.preset_class();
