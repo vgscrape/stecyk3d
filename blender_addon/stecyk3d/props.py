@@ -171,6 +171,8 @@ def make_property(group_key, name, kind, extra):
     kw = {"name": name}
     if (group_key, name) == ("render", "program"):
         kw["update"] = _program_changed
+    if group_key == "sky" and name in names.SKY_TIPS:
+        kw["description"] = names.SKY_TIPS[name]
     if default is not None:
         kw["default"] = default
     if kind == "float":

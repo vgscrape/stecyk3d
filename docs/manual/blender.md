@@ -143,7 +143,7 @@ The Material tab, the World tab (*Bryce sky*, with a closed *Every sky setting* 
 
 With no Bryce Sky node the panel says *Renders as a new Bryce document's sky* and offers *Make it a Bryce sky*. The sections follow Bryce's sky dialog: **Sun** (a Sun object, or a direction when the scene has no sun lamp), **Sky**, **Clouds**, **Scene light**, and for Program 5.0 **The sun in Bryce 5** and **A sky of Bryce 5**.
 
-- **Switch grids.** The sky's flag word is shown as grids of switches, one per named bit: *Atmosphere*, *Glow look 1*, *Glow look 2*, *Custom colours*, *Clouds*, *Stratus*, *Cumulus*, *Haze*, *Sky dome light*, *Haze takes the sun's colour*, *Fog takes the sun's colour*, *Clouds follow the view*, *Fixed cloud coordinates*. Ticking **A sky of Bryce 5** adds *Clouds on a dome* and *Haze shift*, and another grid with *Stars*, *Comets* and *Haze as an older document's*. Hover a switch for what it does.
+- **Switch grids.** The sky's flag word is shown as grids of switches, one per named bit: *Atmosphere*, *Glow look 1*, *Glow look 2*, *Custom colours*, *Clouds*, *Stratus*, *Cumulus*, *Haze*, *Sky dome light*, *Haze takes the sun's colour*, *Fog takes the sun's colour*, *Clouds follow the view*, *Fixed cloud coordinates*; under *Sun and moon*, *Halo rings*, *Secondary ring*, *Sun/Moon size*, *Moon phase*, *Moon picture* and *Rainbow* (see [Sun, moon and stars](#sun-moon-and-stars)). Ticking **A sky of Bryce 5** adds *Clouds on a dome* and *Haze shift*, and another grid with *Stars*, *Comets* and *Haze as an older document's*. Hover a switch for what it does.
 - **New document's sky.** A button under the Sky settings. It gives the sky the settings a new document of the chosen Program starts with (colours, clouds, haze, fog, moon, stars and the switches). The sun, the scene light and the cloud textures stay as they are.
 - **Cloud-layer textures.** When the sky is a node, the *Stratus texture* and *Cumulus texture* each have a box at the bottom of the panel. The box names the Bryce texture linked to that layer and draws its settings in place, or says *none* and, under it, *Link a Bryce texture to the Bryce Sky node's stratus input (Shader Editor, World)* (or *cumulus input*). See [Giving a cloud layer a texture](#giving-a-cloud-layer-a-texture).
 - **Cloud-layer faults.** Above the settings, red lines name a layer that is switched on but has no texture, for example *the sky's Stratus layer is switched on and has no texture: link a Bryce texture to the Bryce Sky node's stratus input (Shader Editor, World), or switch Stratus off*. A red line also names a layer fed by something that is not a Bryce texture. A texture a render would refuse says so in its own box.
@@ -155,7 +155,7 @@ With no Bryce Sky node the panel says *Renders as a new Bryce document's sky* an
 3. Find the **Bryce sky** panel. If it says *Renders as a new Bryce document's sky*, press **Make it a Bryce sky**. This puts a Bryce Sky node on the world's World Output, in place of the Background node, and keeps the world's Bryce sky settings. The panel then says *The sky is its node (Shader Editor, World); this shows it*.
 4. Change the settings in the panel, from the top:
    - **Sun**: the *Sun object* (or *Sun direction* when the scene has no sun lamp), *Sun color*, *Sun glow color* and *Sun intensity*.
-   - **Sky**: the switch grid (*Atmosphere*, *Clouds*, *Stratus*, *Cumulus*, *Haze* and the rest), then *Zenith*, *Horizon*, *Plain*, *Ambient*, the haze and fog settings and the *Moon picture*. The **New document's sky** button under them gives the sky a new document's settings again.
+   - **Sky**: the switch grid (*Atmosphere*, *Clouds*, *Stratus*, *Cumulus*, *Haze* and the rest), then *Zenith*, *Horizon*, *Plain*, *Ambient* and the haze and fog settings. The **New document's sky** button under them gives the sky a new document's settings again. Under it, the **Sun and moon** switch grid.
    - **Clouds**: *Cover*, *Cover amplitude*, *Cloud height*, *Cloud frequency*, *Cloud offset*, *Detail*, *Cumulus color* and *Cumulus shade*.
    - **Scene light**: *Ambient color*, *Ambient amount* and *Shadow lift*.
    - With Program 5.0, **The sun in Bryce 5** and the **A sky of Bryce 5** switch follow.
@@ -174,6 +174,46 @@ With no Bryce Sky node the panel says *Renders as a new Bryce document's sky* an
 7. The *Stratus texture* (or *Cumulus texture*) box at the bottom of the World tab now names the texture and shows its settings: *Gives*, *Colour space*, and the *Filter* and *Colour map* boxes. The red line about the layer goes. Change the texture's noise and component on their nodes in the Shader Editor.
 
 To have no clouds on a layer instead, untick its switch (*Stratus* or *Cumulus*) in the switch grid under **Sky**. The red line goes too.
+
+### Sun, moon and stars
+
+The renderer draws the sun, the moon and the stars by Bryce's own rules. Several of them make a setting look as if it does nothing. The numbers below are the renderer's. The measurements come from a night sky like a moonlit lake: Program 5.0, a sky of Bryce 5, the sun 13.5 degrees under the horizon behind the camera (so the moon is 13.5 degrees up ahead), *Custom colours* on, *Zenith* (0.05, 0.56, 0.90), haze 0.02, no clouds. Hover a setting for the short form.
+
+**Custom colours are seen at 0.7 to 1.2 of their value.** With *Custom colours* on, a ray sees *Zenith* times 0.7 + 0.5·a, where a = (1 + the cosine of the angle between the ray and the sun) / 2. Near the horizon, haze blends *Zenith* toward *Horizon*, which weighs 0.1 × haze at the horizon. The factor depends only on the angle to the sun, not on the sun's height.
+
+| Ray | Factor |
+|---|---|
+| straight away from the sun (toward the moon) | 0.70 |
+| at right angles to the sun | 0.95 |
+| straight up, sun h degrees below the horizon | 0.95 − 0.25 × sin h |
+| toward the sun | 1.20 |
+
+The moon is always opposite the sun, so the sky around the moon comes out at 0.70 of its colour. On the lake sky, *Zenith* (0.05, 0.56, 0.90) gives (9, 100, 161) of 255 there. To get a colour X beside the moon, enter X / 0.7. There is no gamma step: Bryce 5's gamma switch is off in a new document.
+
+**Moon glow size is a strength, and a bright zenith cancels it.** The moon's glow has the strength ν = e^(−10·Z) × *Moon glow size*. Z is the brightest channel of *Zenith* when *Custom colours* is on. Otherwise Z comes from the zenith Bryce makes for the sun's height, which is dark at night, so ν is close to *Moon glow size*. A Z of 0.9 leaves 1/8000 of the strength. On the lake sky, *Moon glow size* 1, 6 and 20 give the same picture, and only 1000 shows. A Z of 0.1 leaves 0.37.
+
+The glow pulls the sky toward the moon's colour, (0.5·m, 0.5·m, 0.625·m), where m is the sine of the moon's height. A low moon's glow is therefore dim. No setting changes the glow's width: with *Custom colours* it falls to half about 27 degrees from the moon. A tighter light round the disc and the moon's rings take the same strength ν. *Sun glow size* multiplies the sun's glow, its rings and the pull toward *Sun color* in the same way, without the zenith's cut.
+
+**Moon disc is a brightness.** The moon's disc has a radius of 1.8 degrees. Inside it, the renderer adds 0.305 × *Moon disc* to each channel of the sky colour there. On the lake sky, *Moon disc* 1 gives (86, 177, 238), 1.4 gives (117, 208, 255) and 3 gives (242, 255, 255). Blue is already 255 from about 1.2, so above that only red and green change. *Sun disc* does the same for the sun's disc, which has a radius of 1.22 degrees. With *Moon picture* on, the disc shows the picture and *Moon disc* is not read.
+
+**The Discs and Moon numbers act only with their switch.** The grid under *Sun and moon* holds the switches. The numbers are under **Every sky setting**.
+
+| Switch | Numbers it reads | Notes |
+|---|---|---|
+| *Halo rings* | Discs 4 (strength), 5 (width) | A ring of 22 degrees round the sun and the moon. The moon's ring has the glow's strength ν, so a bright zenith hides it too. |
+| *Secondary ring* | Discs 6 (width) | A ring of 46 degrees, only with *Halo rings*. A new document has it on. |
+| *Sun/Moon size* | Discs 0 (Disk size), 1 (Horizon illusion) | The discs grow toward the horizon. Program 5.0 reads neither number without the switch. Programs 3.0 and 3.1 always scale the discs by Discs 0. |
+| *Moon phase* | Moon: phase angle (0 full, 180 new), earthshine, the turn of the lit side, softness | The phase also dims the glow. |
+| *Moon picture* | none | The disc shows the moon picture your substrate holds. The World tab's *Moon picture* image is not read. |
+| *Rainbow* | Discs 7 to 14 | Drawn only while the sun is above the horizon, so never at night. |
+
+Discs 2 and 3 are the haze's and the fog's share of the sun's colour, read with *Haze takes the sun's colour* and *Fog takes the sun's colour*. On the lake sky, none of these switches is on, so changing Discs 1, 5, 6, 7 or 8 leaves every pixel the same.
+
+**Stars show only where the sky is dark.** Each star is laid over the sky with the weight 1 − 3.8 × (the brightest channel of the sky colour at that point), held between 0 and 1. That sky colour includes the 0.7 to 1.2 factor and the moon's glow. Haze also fades the stars toward the horizon, and the sun's and the moon's discs hide them.
+
+A star is therefore invisible wherever the sky's brightest channel reaches 0.26 (67 of 255 in the picture), and at full strength only where the sky is black. *Star intensity* makes the stars brighter, and above 1 bigger, but it cannot show a star the sky hides. On the lake sky the blue is 161 of 255, so no star shows at any intensity.
+
+For a night sky with stars and a visible moon glow, keep the zenith dark. With *Zenith* (0.01, 0.10, 0.18), the sky away from the moon is (3, 19, 34) and the stars show. *Moon glow size* 3 lifts the sky about 11 degrees from the moon from (7, 21, 36) to (19, 29, 43).
 
 ## The Object tab: Bryce shape
 

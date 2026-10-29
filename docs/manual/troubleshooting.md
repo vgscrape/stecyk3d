@@ -24,6 +24,7 @@ The renderer follows three Bryce program versions and aims for the same picture,
 
 | Symptom | Likely cause and fix |
 |---|---|
+| A night sky: the custom colours come out darker, Moon glow size or the Discs numbers change nothing, no stars show | Bryce's own rules, not faults. See [Sun, moon and stars](blender.md#sun-moon-and-stars). |
 | The Render tab shows "No substrate file yet..." | No substrate. Fill in the Bryce folders in the add-on preferences and press **Make substrate**. |
 | "the substrate cannot be read" or a missing-table message | The substrate is damaged or old, or lacks something. [Make it again](substrate.md), naming every install you have. |
 | Message names a star catalogue or a kept file | A 5.0 render needs data only a Bryce 5 install holds. Make the substrate again with that install. |
