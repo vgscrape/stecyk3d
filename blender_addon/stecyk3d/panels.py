@@ -516,8 +516,11 @@ def draw_sky(col, sky, five, context):
     col.label(text="Sky")
     draw_sky_switches(col, sky, "flag_", names.SKY_SWITCHES)
     prop_list(col, sky, ("zenith", "horizon", "plain", "ambient", "haze", "haze_color", "fog", "fog_height",
-                         "fog_color", "moon_picture"), five)
+                         "fog_color"), five)
     col.operator("stecyk3d.sky_new", icon="LOOP_BACK")
+    col.separator()
+    col.label(text="Sun and moon (their numbers: Moon and Discs, under Every sky setting)")
+    draw_sky_switches(col, sky, "flag_", names.SUN_MOON_SWITCHES)
     col.separator()
     col.label(text="Clouds")
     prop_list(col, sky, ("cover", "cover_amplitude", "cloud_height", "cloud_frequency", "cloud_offset", "detail",

@@ -25,6 +25,7 @@ Newest first.
 - The Render tab's "Wash grain" setting is now called "Random grain", since it covers soft shadows, radius lights and jittered volumes as well as the wash. Saved files keep their setting.
 - Panels now offer the settings of the old Bryce interface: the full Render, World (sky), Object, Material and Texture settings, light key buttons and the Light Lab gradient starter, texture mapping, noise, filter, colours, phase and blend, and Mix Materials limits.
 - The World tab says where a cloud layer's texture goes (the Bryce Sky node's stratus or cumulus input, in the Shader Editor set to World), and its red lines wrap instead of being cut off. The manual has step-by-step instructions for changing the sky and giving a cloud layer a texture.
+- The World tab has a *Sun and moon* switch grid (Halo rings, Secondary ring, Sun/Moon size, Moon phase, Moon picture, Rainbow): the Discs and Moon numbers act only with these switches, which could not be reached before. Sky settings whose effect surprises have tooltips, and the manual's new *Sun, moon and stars* section explains them, with measurements: custom sky colours are seen at 0.7 to 1.2 of their value by the angle to the sun, Moon glow size is a strength that a bright zenith cancels, Moon disc is a brightness, and stars show only where the sky's brightest channel is below 0.26. The unread *Moon picture* image is no longer offered on the World tab. Pictures are unchanged.
 
 ### Renderer
 
