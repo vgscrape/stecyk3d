@@ -29,6 +29,12 @@ const PIECE_HEADER_LEN: usize = 12;
 
 /// The entry that lists the resource classes.
 pub const CLASS_LIST_ENTRY: usize = 16;
+/// The class list's descriptor, laid out as a class's: the record length (32), room, growth and,
+/// at 12, the number of classes. The list's records past that number are left from classes the
+/// program removed (a user library whose presets were deleted): their entries are freed or hold
+/// no entry number at all, so they are not read. Seen in every composite file of the Bryce 5.0
+/// and 5.5 installs: libraries, scenes and the program's data files. [format]
+pub const CLASS_LIST_DESCRIPTOR_ENTRY: usize = 17;
 const CLASS_RECORD_LEN: usize = 32;
 const CLASS_TAG_LEN: usize = 16;
 const DESCRIPTOR_COUNT_AT: usize = 12;
@@ -195,6 +201,8 @@ impl Container {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum IndexError {
     NoSuchEntry { entry: u32 },
+    ShortClassListDescriptor,
+    ShortClassList { count: u32, held: usize },
     ShortDescriptor { class: usize },
     ShortTable { class: usize, count: u32, held: usize },
 }
@@ -203,6 +211,10 @@ impl fmt::Display for IndexError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             IndexError::NoSuchEntry { entry } => write!(f, "damaged document: entry {entry} is past the directory"),
+            IndexError::ShortClassListDescriptor => write!(f, "damaged document: the class list's descriptor is too short"),
+            IndexError::ShortClassList { count, held } => {
+                write!(f, "damaged document: the class list holds {held} bytes, too few for {count} classes")
+            }
             IndexError::ShortDescriptor { class } => write!(f, "damaged document: class {class}'s descriptor is too short"),
             IndexError::ShortTable { class, count, held } => {
                 write!(f, "damaged document: class {class}'s table holds {held} bytes, too few for {count} resources")
@@ -244,8 +256,16 @@ impl ResourceIndex {
     pub fn read(c: &Container) -> Result<Self, IndexError> {
         let entry = |n: u32| c.entry(n as usize).ok_or(IndexError::NoSuchEntry { entry: n });
         let list = entry(CLASS_LIST_ENTRY as u32)?;
+        let list_descriptor = entry(CLASS_LIST_DESCRIPTOR_ENTRY as u32)?;
+        if list_descriptor.len() < DESCRIPTOR_COUNT_AT + 4 {
+            return Err(IndexError::ShortClassListDescriptor);
+        }
+        let in_list = be32(list_descriptor, DESCRIPTOR_COUNT_AT);
+        if (in_list as u64) * CLASS_RECORD_LEN as u64 > list.len() as u64 {
+            return Err(IndexError::ShortClassList { count: in_list, held: list.len() });
+        }
         let mut classes = Vec::new();
-        for (i, rec) in list.chunks_exact(CLASS_RECORD_LEN).enumerate() {
+        for (i, rec) in list.chunks_exact(CLASS_RECORD_LEN).take(in_list as usize).enumerate() {
             let tag = up_to_zero(&rec[..CLASS_TAG_LEN]);
             if tag.is_empty() {
                 continue;
