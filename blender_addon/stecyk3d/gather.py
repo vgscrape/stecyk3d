@@ -704,7 +704,8 @@ def describe(depsgraph, notices=None, view_camera=False):
                     tree_entry["stored"] = kept[0]
                     if kept[1] is not None:  # trees of one stored tree  name the same number
                         tree_entry["stored_id"] = kept[1]
-                    tree_entry["world"] = solids.own_transform(matrix, units)
+                # every tree carries its world: the renderer's matrix fallback drops the translation
+                tree_entry["world"] = solids.own_transform(matrix, units)
                 if placement_flags(obj):
                     tree_entry["placement_flags"] = placement_flags(obj)
                 if entry.get("material"):
