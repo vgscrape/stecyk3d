@@ -180,7 +180,8 @@ fn u32_at(v: &Value, key: &str, default: u32) -> Rd<u32> {
 
 /// The description's world is (units · x, units · z, units · y) of Blender's: rows are
 /// `units · C·Mᵀ·C` with M the object's Blender world matrix as rows, and the translation
-/// `units · t` with y and z swapped ('s change of axes, applied to a 4x4 matrix).
+/// `units · t` with y and z swapped, t M's fourth column as the add-on's `own_transform` reads it
+/// ('s change of axes, applied to a 4x4 matrix).
 /// (axes and units)
 fn bryce_transform(matrix: &Value, units: f64, what: &str) -> Rd<Transform> {
     let rows = matrix.as_array().ok_or_else(|| DescriptionError(format!("{what} is not a matrix")))?;
@@ -205,8 +206,8 @@ fn bryce_transform(matrix: &Value, units: f64, what: &str) -> Rd<Transform> {
             out_rows[i][j] = units * m[swap(j)][swap(i)];
         }
     }
-    let t = &m[3];
-    let translation = [units * t[0], units * t[2], units * t[1]];
+    // Blender's rows keep the translation in the fourth column; the fourth row is (0, 0, 0, 1)
+    let translation = [units * m[0][3], units * m[2][3], units * m[1][3]];
     if !out_rows.iter().flatten().chain(&translation).all(|c| c.is_finite()) {
         return err(format!("{what} has a number that is not finite"));
     }
@@ -2239,11 +2240,42 @@ mod tests {
         assert!(describe(&text(&bad)).is_err());
     }
 
+    /// An entry given only `matrix` (no `world`) stands where its matrix puts it: Blender's rows keep the translation
+    /// in the fourth column, which becomes the description's (x, z, y) times units. A tree and a plain shape alike.
+    #[test]
+    fn a_matrix_without_a_world_keeps_its_translation() {
+        let matrix = "[[1, 0, 0, -2.5], [0, 1, 0, 3], [0, 0, 1, 1.5], [0, 0, 0, 1]]";
+        let stored = "{\"pieces\": [{\"parent\": -1, \"matrix\": [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0]}], \"leaves\": [], \"shapes\": []}";
+        let text = format!(
+            "{{\"size\": [8, 6], \"render\": {{\"version\": \"5.0\", \"units\": 2.0}}, \"sky\": {{}}, \
+             \"sun\": {{\"direction\": [0.3, 0.6, -0.7], \"colour\": [1, 1, 1]}}, \
+             \"camera\": {{\"position\": [0, 0, -10], \"forward\": [0, 0, 1], \"up\": [0, 1, 0], \"frame_angle\": 1.0}}, \
+             \"objects\": [{{\"name\": \"c\", \"shape\": \"cube\", \"matrix\": {matrix}}}], \
+             \"trees\": [{{\"name\": \"t\", \"matrix\": {matrix}, \"stored\": {stored}}}]}}"
+        );
+        let d = describe(&text).expect("a cube and a tree are read");
+        let world = |name: &str| {
+            let o = d.scene.objects.iter().find(|o| o.name == name.as_bytes()).expect(name);
+            o.world.expect("a world")
+        };
+        for name in ["c", "t"] {
+            assert_eq!(world(name).translation, [-5.0, 3.0, 6.0], "{name}");
+            assert_eq!(world(name).rows, [[2.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 2.0]], "{name}");
+        }
+        // two trees at x = -2 and 2 stand apart (the issue's four trees at the world origin)
+        let moved = |x: f64| text.replace("-2.5", &format!("{x:?}"));
+        let at = |x: f64| {
+            let d = describe(&moved(x)).unwrap();
+            d.scene.objects.iter().find(|o| o.name == b"t").unwrap().world.unwrap().translation
+        };
+        assert_eq!((at(-2.0)[0], at(2.0)[0]), (-4.0, 4.0));
+    }
+
     #[test]
     fn a_metaball_is_read_with_its_sign() {
         let ball = |sign: &str| {
             with_object(&format!(
-                "{{\"name\": \"b\", \"shape\": \"metaball\", \"matrix\": [[2, 0, 0, 0], [0, 2, 0, 0], [0, 0, 2, 0], [1, 2, 3, 1]], {sign}}}"
+                "{{\"name\": \"b\", \"shape\": \"metaball\", \"matrix\": [[2, 0, 0, 1], [0, 2, 0, 2], [0, 0, 2, 3], [0, 0, 0, 1]], {sign}}}"
             ))
         };
         let d = ball("\"sign\": -1").expect("a metaball is read");
