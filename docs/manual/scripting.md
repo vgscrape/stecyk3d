@@ -30,7 +30,7 @@ api = importlib.import_module(next(k for k in bpy.context.preferences.addons.key
                               + ".api")
 out = api.arguments().positional[0]
 
-api.begin(program="5.0")          # Stecyk3D, as Bryce 5.0, in an emptied scene
+api.begin(program="5.0", clear=True)  # Stecyk3D, as Bryce 5.0, in an emptied scene
 
 # Materials: a Bryce preset (the first of the names that loads) with two channels changed, and one from a colour.
 water = api.preset_material("Waters&Liquids", "Shiny and Still", channels={"reflection": 0.7})
@@ -60,7 +60,7 @@ A longer one is `examples/lake/build_lake.py` in the repository: a moonlit lake 
 
 | Function | What it does |
 |---|---|
-| `begin(program="5.0", clear=True)` | Sets the render engine to Stecyk3D and the program (`"3.0"`, `"3.1"`, `"5.0"`). With `clear`, removes the scene's objects, gives it a new empty world and removes every datablock nothing uses any more. Returns the scene. |
+| `begin(program="5.0", clear=False)` | Sets the render engine to Stecyk3D and the program (`"3.0"`, `"3.1"`, `"5.0"`). With `clear=True` (off by default, since it also empties a scene open in Blender), removes the scene's objects, gives it a new empty world and removes every datablock nothing uses any more. Returns the scene. |
 | `preset_material(library, *names, channels=None)` | A new material from the first of the named presets of a material library that loads. The library is named as the Material panel shows it, without the folder in brackets (`"Waters&Liquids"`); a preset by its whole name or the start of it. Each preset that does not load is printed (`STECYK3D PRESET Rocks&Stones / Wet Rock won't load (...)`) and the next tried; the one used is printed too. `channels` puts Materials Lab values over the preset's: numbers, and colours as three display values (0 to 1, as the Bryce Material node shows them). |
 | `colour_material(name, rgb, roughness=0.8, metallic=0.0, glow=None)` | A Bryce material made from a Principled BSDF's colour (linear, as Blender's colour picker gives it), roughness and metallic, by the add-on's **Bryce material from the Blender shader**. `glow=(rgb, strength)` is the emission: Bryce's ambient colour and ambience, so the object lights itself. |
 | `shape(kind, name, location, scale=(1, 1, 1), rotation=(0, 0, 0), material=None)` | A Bryce shape as the Add menu makes it: plane, slab, cube, sphere, cylinder, cone, pyramid, torus, square, disc; metaball and tree with the program 5.0. Rotation in radians. Made directly, with no 3D cursor, selection or operator, so it works headless. |
@@ -95,7 +95,7 @@ What is refused, with an error naming it:
 
 ```python
 def build(sun=1.2, haze=0.05):
-    api.begin("5.0")                     # each variant starts from an empty scene
+    api.begin("5.0", clear=True)         # each variant starts from an empty scene
     ...                                  # the scene, as above
     api.sky(sun_intensity=sun, haze=haze)
 

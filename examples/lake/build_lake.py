@@ -37,7 +37,7 @@ RES = tuple(int(v) for v in ARGS.get("--res", "640x452" if QUICK else "2000x1414
 SEED = 1998
 
 rng = random.Random(SEED)
-scene = api.begin("5.0")
+scene = api.begin("5.0", clear=True)
 
 # ---------------------------------------------------------------- helpers
 

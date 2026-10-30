@@ -24,7 +24,7 @@ prefs = bpy.context.preferences.addons[ADDON].preferences
 prefs.substrate, prefs.renderer_program = args.get("--substrate", ""), args.get("--program", "")
 if args.has("--fail"):
     raise RuntimeError("asked to fail")
-api.begin("5.0")
+api.begin("5.0", clear=True)
 api.shape("sphere", "Ball", (0, 0, 0), material=api.colour_material("Grey", (0.5, 0.5, 0.5)))
 api.sky(sun_intensity=args.get("--sun", 1.0), ambient_color=(0.2, 0.2, 0.2))
 cam = bpy.data.objects.new("Camera", bpy.data.cameras.new("Camera"))
@@ -53,12 +53,12 @@ def camera(bpy, scene):
 
 def check_scene(bpy, api, scene):
     assert api.package_name() == blender_common.ADDON, api.package_name()
-    api.begin("3.1")
+    api.begin("3.1", clear=True)
     assert scene.render.engine == "STECYK3D" and scene.bryce_render.program == "3.1"
     assert len(scene.objects) == 0 and len(bpy.data.materials) == 0, list(scene.objects)
     expect_error(ValueError, "program '4.0'", api.begin, "4.0")
     expect_error(ValueError, "a metaball is a shape of the program 5.0", api.shape, "metaball", "M", (0, 0, 0))
-    api.begin("5.0")
+    api.begin("5.0", clear=True)
     red = api.colour_material("Red", (0.8, 0.1, 0.1), roughness=0.25, glow=((0.5, 0.2, 0.1), 0.5))
     node = next(n for n in red.node_tree.nodes if n.bl_idname == "BryceMaterialNode")
     assert abs(node.inputs["specularity"].value - 0.75) < 1e-6, node.inputs["specularity"].value
@@ -174,7 +174,7 @@ def check_render(bpy, api, scene, prefix):
     built = []
     def build(sun=1.0, **rest):
         assert not rest, rest
-        api.begin("5.0")
+        api.begin("5.0", clear=True)
         api.shape("sphere", "Ball", (0, 0, 1), material=api.colour_material("Grey", (0.5, 0.5, 0.5)))
         api.sky(sun_intensity=sun, ambient_color=(0.1, 0.1, 0.1))
         camera(bpy, bpy.context.scene)

@@ -49,9 +49,9 @@ def log(*parts):
 
 # ---------------------------------------------------------------- the scene
 
-def begin(program="5.0", clear=True, scene=None):
-    """The scene renders with Stecyk3D as the program given ("3.0", "3.1" or "5.0"). With `clear`, its objects
-    go, it gets a new empty world, and every datablock nothing uses any more is removed, so a script (or each
+def begin(program="5.0", clear=False, scene=None):
+    """The scene renders with Stecyk3D as the program given ("3.0", "3.1" or "5.0"). With `clear` (asked for, never the
+    default: it empties a scene open in Blender too), its objects go, it gets a new empty world, and every datablock nothing uses any more is removed, so a script (or each
     variant of render_variants) starts from nothing. Returns the scene."""
     scene = _scene(scene)
     if program not in names.PROGRAM:
