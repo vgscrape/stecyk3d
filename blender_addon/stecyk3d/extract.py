@@ -18,7 +18,7 @@ def install_folders(text):
     return parts
 
 
-VERSIONS = ("3.0", "3.1", "5.0")  # the three folder fields, in this order
+VERSIONS = ("3.0", "3.1", "5.0", "5.5")  # the four folder fields, in this order
 EXTRACTOR_NAME = "stecyk3d-extract"
 RENDERER_NAME = "stecyk3d-render"
 
@@ -29,6 +29,8 @@ def guess_version(path):
     low = path.lower().replace("\\", "/")
     if re.search(r"(?<![0-9])(3\.1|31)(?![0-9])", low):
         return "3.1"
+    if re.search(r"(?<![0-9])(5\.5|55)(?![0-9])", low):
+        return "5.5"
     if re.search(r"(?<![0-9])(3\.0|30)(?![0-9])", low) or "bryce3d" in low or "bryce 3d" in low:
         return "3.0"
     if re.search(r"(?<![0-9])5(\.0)?(?![0-9])", low) or "corel" in low or "daz" in low:
@@ -128,19 +130,19 @@ def problems(extractor, fields):
         found.append(program_missing_message("extractor", EXTRACTOR_NAME, []))
     pairs = fields_set(fields) if isinstance(fields, dict) else [("", f) for f in fields]
     if not pairs:
-        found.append("no Bryce folder is set: fill in at least one of the Bryce 3.0, 3.1 and 5.0 folders")
+        found.append("no Bryce folder is set: fill in at least one of the Bryce 3.0, 3.1, 5.0 and 5.5 folders")
     for v, folder in pairs:
         if not os.path.isdir(folder):
             found.append("%s%s is not a folder (it does not exist)" % ("Bryce %s: " % v if v else "", folder))
     return found
 
 
-PROGRAMS = {"bryce 3d.exe": "3.x", "bryce5.exe": "5.0"}  # the program file each kind of install holds (any letter case)
+PROGRAMS = {"bryce 3d.exe": "3.x", "bryce5.exe": "5.0", "bryce55.exe": "5.5"}  # each kind of install's program file (any case)
 
 
 def program_kind(folder):
     """Which Bryce a folder looks like, by its program file (any case; in the folder or one folder inside, as the
-    extractor looks): "3.x" (Bryce 3D 3.0 or 3.1), "5.0", or "" for neither or no such folder."""
+    extractor looks): "3.x" (Bryce 3D 3.0 or 3.1), "5.0", "5.5", or "" for none or no such folder."""
     def entries(d):
         try:
             return {e.lower(): e for e in os.listdir(d)}
@@ -168,9 +170,10 @@ def kind_mark(version, folder):
     kind = program_kind(folder)
     if not kind:
         return False, "no Bryce program file here"
-    if (kind == "5.0") != (version == "5.0"):
+    fits = version.startswith("3.") if kind == "3.x" else kind == version
+    if not fits:
         return False, "looks like Bryce %s, not %s" % (kind, version)
-    return True, "looks like a Bryce %s install" % ("3D " + version if kind == "3.x" else "5.0")
+    return True, "looks like a Bryce %s install" % ("3D " + version if kind == "3.x" else kind)
 
 
 def file_lines(stdout):

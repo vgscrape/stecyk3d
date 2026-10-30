@@ -8,7 +8,7 @@ Stecyk3D has two parts: the **Blender add-on** (Python, "Stecyk3D for Blender") 
 |---|---|
 | Rust toolchain | Edition 2024 (Rust 1.85 or newer; developed on 1.93). Install with rustup. |
 | Blender | 4.2 or newer by the add-on manifest; developed and tested with Blender 5.2. Older versions than 5.2 have not been tested. |
-| Your own Bryce 3D 3.0 / 3.1 or Bryce 5.0 install | Needed once, to [make the substrate](substrate.md). Any one of them is enough to start; each adds what only it holds. |
+| Your own Bryce 3D 3.0 / 3.1, Bryce 5.0 or Bryce 5.5 install | Needed once, to [make the substrate](substrate.md). Any one of them is enough to start; each adds what only it holds. |
 | Hardware | Nothing special. The renderer runs on the CPU and uses every core. |
 
 The renderer has no third-party Rust dependencies.
@@ -50,7 +50,7 @@ Open *Edit > Preferences > Add-ons > Stecyk3D*. You will see:
 
 | Item | What to do |
 |---|---|
-| **Bryce 3.0 folder**, **Bryce 3.1 folder**, **Bryce 5.0 folder** | Fill in the install folder of each version you own (all optional, any subset). The folder may be the install itself or hold it up to two levels below (for example a `Corel/Bryce 3D` wrapper). A line under each field says at once whether the folder looks right (see [The preferences page](blender.md#the-preferences-page)). A folder that holds another version than its field is refused when you make the substrate, with a message saying where it belongs. |
+| **Bryce 3.0 folder**, **Bryce 3.1 folder**, **Bryce 5.0 folder**, **Bryce 5.5 folder** | Fill in the install folder of each version you own (all optional, any subset). The folder may be the install itself or hold it up to two levels below (for example a `Corel/Bryce 3D` wrapper). A line under each field says at once whether the folder looks right (see [The preferences page](blender.md#the-preferences-page)). A folder that holds another version than its field is refused when you make the substrate, with a message saying where it belongs. |
 | **Make substrate** | Press it. The add-on runs the extractor on those folders; an INFO message and a box under the button say, for each, what it recognised and how many files it took, and how long it took. See [Making the substrate](substrate.md). |
 | `Substrate`, `Renderer`, `Extractor` lines | Read-only. They show what the add-on found, or "not made yet" / "not found" with an error icon. |
 | **Advanced** (a closed subpanel) | Leave empty unless something is not found: **Substrate file**, **Renderer program**, **Extractor program** override the automatic search. |

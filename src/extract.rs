@@ -293,8 +293,15 @@ fn resolve(dir: &Path, path: &str) -> Option<PathBuf> {
 
 const PROGRAM_THREE: &str = "Bryce 3D.exe";
 const PROGRAM_FIVE: &str = "Bryce5.exe";
+const PROGRAM_FIVE_FIVE: &str = "Bryce55.exe";
 const MATHS_THREE: &str = "Axiom.dll";
 const MATHS_FIVE: &str = "B5Axiom.dll";
+const MATHS_FIVE_FIVE: &str = "B55Axiom.dll";
+/// The program file and the maths library of each family (the `family` of data/extract/builds.jsonl).
+const FAMILIES: [(u8, &str, &str); 3] =
+    [(3, PROGRAM_THREE, MATHS_THREE), (5, PROGRAM_FIVE, MATHS_FIVE), (55, PROGRAM_FIVE_FIVE, MATHS_FIVE_FIVE)];
+/// The program files, for messages.
+const PROGRAM_NAMES: &str = "Bryce 3D.exe, Bryce5.exe or Bryce55.exe";
 /// The deepest a preset library may stand below the Presets folder.
 const PRESET_DEPTH: usize = 4;
 
@@ -342,13 +349,15 @@ fn table_by_name(name: &str) -> Option<TableName> {
     TableName::from_name(name.as_bytes())
 }
 
-/// The Bryce version a build belongs to ("3.0", "3.1", "5.0"), the three the add-on's folder
+/// The Bryce version a build belongs to ("3.0", "3.1", "5.0", "5.5"), the four the add-on's folder
 /// fields stand for. (Folders by version)
 pub fn version_of_build(build: &str) -> &'static str {
     if build.ends_with("3.0") {
         "3.0"
     } else if build.ends_with("3.1") {
         "3.1"
+    } else if build.ends_with("5.5") {
+        "5.5"
     } else {
         "5.0"
     }
@@ -359,7 +368,7 @@ pub fn version_of_build(build: &str) -> &'static str {
 const SEARCH_DEPTH: usize = 2;
 
 fn has_program(dir: &Path) -> bool {
-    file_named(dir, PROGRAM_THREE).is_some() || file_named(dir, PROGRAM_FIVE).is_some()
+    FAMILIES.iter().any(|(_, program, _)| file_named(dir, program).is_some())
 }
 
 /// The install folder in or below `dir`: `dir` itself when it holds a program file, else the
@@ -393,8 +402,8 @@ pub fn plan(folders: &[PathBuf]) -> Result<Plan, Refused> {
     plan_expected(&items)
 }
 
-/// As `plan`, each folder optionally with the Bryce version ("3.0", "3.1", "5.0") its field stands
-/// for: a folder holding another version is refused, naming both.
+/// As `plan`, each folder optionally with the Bryce version ("3.0", "3.1", "5.0", "5.5") its field
+/// stands for: a folder holding another version is refused, naming both.
 pub fn plan_expected(items: &[(Option<String>, PathBuf)]) -> Result<Plan, Refused> {
     let folders: Vec<PathBuf> = items.iter().map(|i| i.1.clone()).collect();
     let data = known();
@@ -431,25 +440,23 @@ fn plan_folder(
     // The install may stand in the folder or a little below it.
     let Some(dir) = locate_install(given) else {
         return Err(vec![format!(
-            "{name}: no Bryce program file ({PROGRAM_THREE} or {PROGRAM_FIVE}) found in this folder or in the {SEARCH_DEPTH} levels of folders below it"
+            "{name}: no Bryce program file ({PROGRAM_NAMES}) found in this folder or in the {SEARCH_DEPTH} levels of folders below it"
         )]);
     };
     let dir = dir.as_path();
     let name = if dir == given { name } else { format!("{name} (install found at {})", dir.display()) };
     // (2) and (3): the program file
-    let three = file_named(dir, PROGRAM_THREE);
-    let five = file_named(dir, PROGRAM_FIVE);
-    let (program_path, family) = match (three, five) {
-        (None, None) => return Err(vec![format!("{name}: no program file ({PROGRAM_THREE} or {PROGRAM_FIVE})")]),
-        (Some(a), Some(b)) => {
-            return Err(vec![format!(
-                "{name}: both program files, {} and {}: not one install",
-                a.display(),
-                b.display()
-            )]);
+    let found: Vec<(PathBuf, u8, &str)> = FAMILIES
+        .iter()
+        .filter_map(|&(family, program, maths)| file_named(dir, program).map(|p| (p, family, maths)))
+        .collect();
+    let (program_path, family, maths_name) = match found.as_slice() {
+        [] => return Err(vec![format!("{name}: no program file ({PROGRAM_NAMES})")]),
+        [one] => one.clone(),
+        several => {
+            let list: Vec<String> = several.iter().map(|(p, _, _)| p.display().to_string()).collect();
+            return Err(vec![format!("{name}: several program files, {}: not one install", list.join(" and "))]);
         }
-        (Some(p), None) => (p, 3u8),
-        (None, Some(p)) => (p, 5u8),
     };
     let program = fs::read(&program_path).map_err(|e| vec![format!("{}: cannot be read: {e}", program_path.display())])?;
     let program_hash = to_hex(&sha256(&program));
@@ -470,7 +477,6 @@ fn plan_folder(
     }
     let mut report = vec![format!("{name}: recognised as {build_name}")];
     // (5) its maths library
-    let maths_name = if family == 3 { MATHS_THREE } else { MATHS_FIVE };
     let maths_known = data.files.iter().find(|k| k.role == FileRole::Maths && k.build == build_name).expect("a row");
     let maths = match file_named(dir, maths_name) {
         None => return Err(vec![format!("{name}: {build_name}: the maths library {maths_name} is missing")]),
@@ -540,7 +546,7 @@ fn plan_folder(
         keep_known(dir, &folder_name, k, 2, "the star catalogue", &mut kept, &mut report);
     }
     let presets = child_named(dir, "Presets");
-    if family == 5 {
+    if family != 3 {
         let leaves_dir = presets.as_ref().and_then(|p| resolve(p, "Leaves/Installed"));
         let mut n = 0u64;
         let mut total = 0u64;
@@ -814,6 +820,55 @@ mod tests {
         assert_eq!(version_of_build("Bryce 3D 3.1"), "3.1");
         assert_eq!(version_of_build("Corel Bryce 5.0"), "5.0");
         assert_eq!(version_of_build("DAZ Bryce 5 (2006)"), "5.0");
+        assert_eq!(version_of_build("DAZ Bryce 5.5"), "5.5");
+        // every build the data names belongs to one of the four versions, and 5.5 to its own
+        for f in known().files {
+            let v = version_of_build(&f.build);
+            assert!(["3.0", "3.1", "5.0", "5.5"].contains(&v), "{}", f.build);
+            assert_eq!(v == "5.5", f.family == 55, "{}", f.build);
+        }
+    }
+
+    #[test]
+    fn a_five_five_install_is_found_and_its_program_checked() {
+        let root = std::env::temp_dir().join(format!("stecyk3d-five-five-{}", std::process::id()));
+        let inner = root.join("DAZ").join("Bryce 5.5");
+        fs::create_dir_all(&inner).unwrap();
+        fs::write(inner.join("BRYCE55.EXE"), b"not a program").unwrap();
+        assert_eq!(locate_install(&root), Some(inner.clone()));
+        // a made-up program file is no known build: refused, naming the file
+        let refused = plan_expected(&[(Some("5.5".into()), root.clone())]).unwrap_err();
+        assert!(refused.messages[0].contains("BRYCE55.EXE") && refused.messages[0].contains("unknown build"), "{refused}");
+        // two programs in one folder are not one install
+        fs::write(inner.join("Bryce5.exe"), b"not a program either").unwrap();
+        let refused = plan(std::slice::from_ref(&inner)).unwrap_err();
+        assert!(refused.messages[0].contains("several program files") && refused.messages[0].contains("not one install"), "{refused}");
+        fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn the_five_five_data_names_its_files() {
+        let d = known();
+        let roles: Vec<FileRole> =
+            d.files.iter().filter(|f| f.build == "DAZ Bryce 5.5").map(|f| f.role).collect();
+        assert_eq!(
+            roles,
+            [FileRole::Program, FileRole::Maths, FileRole::Menus, FileRole::Moon, FileRole::Stars, FileRole::Editor]
+        );
+        let five_five: BTreeSet<&str> =
+            d.files.iter().filter(|f| f.build == "DAZ Bryce 5.5").map(|f| f.sha256.as_str()).collect();
+        // the tables of Corel Bryce 5.0, each found again in 5.5's files
+        let tables_50: BTreeSet<&str> = d
+            .locations
+            .iter()
+            .filter(|l| d.files.iter().any(|f| f.build == "Corel Bryce 5.0" && f.sha256 == l.file_sha256))
+            .map(|l| l.table.as_str())
+            .collect();
+        let tables_55: BTreeSet<&str> =
+            d.locations.iter().filter(|l| five_five.contains(l.file_sha256.as_str())).map(|l| l.table.as_str()).collect();
+        assert_eq!(tables_55, tables_50);
+        assert!(d.counts.contains_key(&("DAZ Bryce 5.5".to_owned(), "library".to_owned())));
+        assert!(d.counts.contains_key(&("DAZ Bryce 5.5".to_owned(), "leaf".to_owned())));
     }
 
     use super::*;
@@ -891,11 +946,11 @@ mod tests {
     #[test]
     fn the_data_is_whole() {
         let d = known();
-        assert_eq!(d.files.len(), 22);
+        assert_eq!(d.files.len(), 28);
         assert_eq!(d.table_len.len(), 22);
-        assert_eq!(d.locations.len(), 64);
+        assert_eq!(d.locations.len(), 83);
         let editor_rows = d.locations.iter().filter(|l| l.table.starts_with("terrain-")).count();
-        assert_eq!(editor_rows, 6);
+        assert_eq!(editor_rows, 7);
         assert!(d.table_len.iter().filter(|(k, _)| k.starts_with("terrain-filter-presets-")).all(|(_, &n)| n == 1152));
         assert_eq!(d.leaves.len(), 61);
         let menus_rows = d
@@ -908,7 +963,7 @@ mod tests {
                 )
             })
             .count();
-        assert_eq!(menus_rows, 22);
+        assert_eq!(menus_rows, 28);
         for l in &d.locations {
             assert!(d.table_len.contains_key(&l.table), "{}", l.table);
             assert!(table_by_name(&l.table).is_some());

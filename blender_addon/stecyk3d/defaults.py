@@ -6,8 +6,10 @@
 """What a setting holds when no file gives it: the numbers a new Bryce document and its new objects have.
 
 Where the programs differ the table gives the numbers of the program the add-on starts with, 3.0 (the first item of
-`program`); the `FIVE` table overrides them for the program 5.0. Every constant names its row of's Defaults
+`program`); the `FIVE` table overrides them for the programs 5.0 and 5.5. Every constant names its row of's Defaults
 table. Pure Python: props.py and nodes.py read it."""
+
+from . import names
 
 WORD_SKY_FLAGS_30 = 0x3E000283  # [format]
 WORD_SKY_FLAGS_50 = 0x7E0002B3  # [format]
@@ -105,7 +107,7 @@ FIVE = {
 def program_default(group, name, program):
     """The default of a setting for a program: 5.0's where the table has one, else the table's. (rows
     with a 5.0 value);"""
-    if program == "5.0" and (group, name) in FIVE:
+    if names.is_five(program) and (group, name) in FIVE:
         return FIVE[(group, name)]
     return GROUP_DEFAULTS.get((group, name))
 
@@ -120,7 +122,7 @@ def switched_value(group, name, current, new_program):
     setting still holds the other kind's default (nothing was set), else None (leave it). (rows with a
     5.0 value);"""
     new = program_default(group, name, new_program)
-    old = program_default(group, name, "3.0" if new_program == "5.0" else "5.0")
+    old = program_default(group, name, "3.0" if names.is_five(new_program) else "5.0")
     if old is None or new is None or old == new or current != old:
         return None
     return new

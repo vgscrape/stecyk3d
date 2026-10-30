@@ -4,6 +4,10 @@ Newest first.
 
 ## Unreleased
 
+### Bryce 5.5
+
+- DAZ Bryce 5.5 is supported as an install to make the substrate from (a "Bryce 5.5 folder" in the preferences, `--bryce 5.5=FOLDER`), alone or beside the others: its tables are found in its own files and are 5.0's, and its moon, stars, leaves and preset libraries are kept. "5.5" is a program choice: it renders with 5.0's rules, and a sky with its own colours is refused, because Bryce 5.5 draws the moon's disc at half 5.0's size. See the manual's "Bryce 5.5".
+
 ### Fixed
 
 - The Rendered viewport no longer looks washed out until the first F12: the scene is set to the Raw view transform (look None, dithering 0) when the viewport first starts on it, and when a Bryce document is imported. Blender's Color Management panel is now shown with the Stecyk3D engine.

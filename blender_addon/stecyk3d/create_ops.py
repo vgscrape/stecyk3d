@@ -24,7 +24,7 @@ def stand_in_object(name, shape, torus, collection):
 
 
 def is_five(context):
-    return getattr(context.scene, names.SCENE_RENDER_GROUP).program == "5.0"
+    return names.is_five(getattr(context.scene, names.SCENE_RENDER_GROUP).program)
 
 
 class STECYK3D_OT_add_shape(bpy.types.Operator):

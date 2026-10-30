@@ -840,6 +840,8 @@ pub const FOLDER_BRYCE_31: &str = "Bryce 3D 3.1"; // [format]
 pub const FOLDER_COREL_5: &str = "Corel Bryce 5.0"; // [format]
 /// [format]
 pub const FOLDER_DAZ_5: &str = "DAZ Bryce 5 (2006)"; // [format]
+/// [format]
+pub const FOLDER_DAZ_55: &str = "DAZ Bryce 5.5"; // [format]
 /// A folder whose name begins with this holds a build of Bryce 3D.
 const BRYCE_3D_PREFIX: &str = "Bryce 3D";
 
@@ -866,11 +868,13 @@ pub fn version_family(version: crate::version::RenderAs) -> BuildFamily {
 }
 
 /// The named folders a render takes first, in order.
-fn preferred_folders(version: crate::version::RenderAs) -> &'static [&'static str] {
-    match version {
-        crate::version::RenderAs::Bryce30 => &[FOLDER_BRYCE_30],
-        crate::version::RenderAs::Bryce31 => &[FOLDER_BRYCE_31],
-        crate::version::RenderAs::Bryce50 => &[FOLDER_COREL_5, FOLDER_DAZ_5],
+fn preferred_folders(program: crate::version::Program) -> &'static [&'static str] {
+    use crate::version::Program;
+    match program {
+        Program::Bryce30 => &[FOLDER_BRYCE_30],
+        Program::Bryce31 => &[FOLDER_BRYCE_31],
+        Program::Bryce50 => &[FOLDER_COREL_5, FOLDER_DAZ_5],
+        Program::Bryce55 => &[FOLDER_DAZ_55],
     }
 }
 
@@ -896,16 +900,23 @@ fn leaf_key(name: &str) -> String {
 
 impl Substrate {
     /// The builds' folders a render as `version` takes kept files of `role` from, in
-    /// order. The moon's picture and the preset libraries: the version's own named folders
-    /// (3.0: Bryce 3D 3.0; 3.1: Bryce 3D 3.1; 5.0: Corel Bryce 5.0, then DAZ Bryce 5 (2006)),
-    /// then the other folders of the same family in the order the substrate lists their
-    /// files. The star catalogue and the installed leaves: the order of a render as 5.0,
-    /// whatever the version. Only folders holding a listed file of the role appear.
+    /// order: `folder_order_for` of the program the version names.
     pub fn folder_order(&self, version: crate::version::RenderAs, role: KeptRole) -> Vec<&str> {
-        let version = match role {
-            KeptRole::StarCatalogue | KeptRole::InstalledLeaf => crate::version::RenderAs::Bryce50,
-            KeptRole::MoonPicture | KeptRole::PresetLibrary => version,
+        self.folder_order_for(crate::version::Program::from(version), role)
+    }
+
+    /// The builds' folders a render of `program` takes kept files of `role` from, in
+    /// order. The moon's picture and the preset libraries: the program's own named folders
+    /// (3.0: Bryce 3D 3.0; 3.1: Bryce 3D 3.1; 5.0: Corel Bryce 5.0, then DAZ Bryce 5 (2006);
+    /// 5.5: DAZ Bryce 5.5), then the other folders of the same family in the order the
+    /// substrate lists their files. The star catalogue and the installed leaves: the order of a
+    /// render as 5.0, whatever the program. Only folders holding a listed file of the role appear.
+    pub fn folder_order_for(&self, program: crate::version::Program, role: KeptRole) -> Vec<&str> {
+        let program = match role {
+            KeptRole::StarCatalogue | KeptRole::InstalledLeaf => crate::version::Program::Bryce50,
+            KeptRole::MoonPicture | KeptRole::PresetLibrary => program,
         };
+        let version = program.render_as();
         let mut listed: Vec<&str> = Vec::new();
         for k in self.kept.iter().filter(|k| k.role == role) {
             if let Some((folder, _)) = split_build(&k.path)
@@ -914,7 +925,7 @@ impl Substrate {
                 listed.push(folder);
             }
         }
-        let preferred = preferred_folders(version);
+        let preferred = preferred_folders(program);
         let family = version_family(version);
         let mut order: Vec<&str> =
             preferred.iter().filter_map(|p| listed.iter().copied().find(|f| f == p)).collect();
@@ -1412,6 +1423,26 @@ mod tests {
         // The catalogue is Bryce 5's, whatever the version.
         assert_eq!(s.folder_order(Bryce30, KeptRole::StarCatalogue), ["Other"]);
         assert_eq!(s.kept_for_role(Bryce31, KeptRole::StarCatalogue).unwrap().path, "Other/s");
+    }
+
+    #[test]
+    fn folder_order_of_five_five() {
+        use crate::version::Program;
+        let s = with_kept(&[
+            (4, "Corel Bryce 5.0/a.mat"),
+            (4, "DAZ Bryce 5.5/b.mat"),
+            (4, "Bryce 3D 3.1/c.mat"),
+            (3, "Corel Bryce 5.0/leaf.lps"),
+            (3, "DAZ Bryce 5.5/leaf.lps"),
+        ]);
+        let lib = KeptRole::PresetLibrary;
+        // 5.5 takes its own folder first, then the other Bryce 5 folders; 5.0 the other way round
+        assert_eq!(s.folder_order_for(Program::Bryce55, lib), ["DAZ Bryce 5.5", "Corel Bryce 5.0"]);
+        assert_eq!(s.folder_order_for(Program::Bryce50, lib), ["Corel Bryce 5.0", "DAZ Bryce 5.5"]);
+        assert_eq!(s.folder_order(crate::version::RenderAs::Bryce50, lib), ["Corel Bryce 5.0", "DAZ Bryce 5.5"]);
+        // the installed leaves are taken as 5.0 takes them, whatever the program
+        assert_eq!(s.folder_order_for(Program::Bryce55, KeptRole::InstalledLeaf), ["Corel Bryce 5.0", "DAZ Bryce 5.5"]);
+        assert_eq!(FOLDER_DAZ_55, "DAZ Bryce 5.5");
     }
 
     #[test]

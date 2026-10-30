@@ -26,14 +26,14 @@ fn main() -> ExitCode {
         if a == "--out" {
             out = args.next().map(PathBuf::from);
         } else if a == "--bryce" {
-            // --bryce 3.0=FOLDER: the folder must hold that version (3.0, 3.1 or 5.0)
+            // --bryce 3.0=FOLDER: the folder must hold that version (3.0, 3.1, 5.0 or 5.5)
             let spec = args.next().unwrap_or_default();
             match spec.split_once('=') {
-                Some((v @ ("3.0" | "3.1" | "5.0"), f)) if !f.is_empty() => {
+                Some((v @ ("3.0" | "3.1" | "5.0" | "5.5"), f)) if !f.is_empty() => {
                     folders.push((Some(v.to_owned()), PathBuf::from(f)));
                 }
                 _ => {
-                    eprintln!("usage: --bryce 3.0=FOLDER (or 3.1, 5.0); got {spec:?}");
+                    eprintln!("usage: --bryce 3.0=FOLDER (or 3.1, 5.0, 5.5); got {spec:?}");
                     return ExitCode::from(2);
                 }
             }

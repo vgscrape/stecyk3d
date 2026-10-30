@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 //! The render program: a scene file in, a picture out.
 //!
-//!     stecyk3d-render --substrate S --document F [--as 3.0|3.1|5.0] --picture OUT [--levels L]
+//!     stecyk3d-render --substrate S --document F [--as 3.0|3.1|5.0|5.5] --picture OUT [--levels L]
 //!         [--mode mask|distance|altitude]
 //!     stecyk3d-render --substrate S --description D.json --levels L [--picture OUT] [--stream] [--scattered|--rows]
 //!
@@ -55,14 +55,15 @@ use stecyk3d::scene_export;
 use stecyk3d::scene_file::Flavour;
 use stecyk3d::scene_library::{Library, LibraryKind};
 use stecyk3d::substrate;
-use stecyk3d::version::RenderAs;
+use stecyk3d::version::{Program, RenderAs};
 
 struct Args {
     /// The option's file; none: BRYCE_SUBSTRATE, then the default place .
     substrate: Option<PathBuf>,
     document: Option<PathBuf>,
     description: Option<PathBuf>,
-    version: Option<RenderAs>,
+    /// `--as`: the program to render the document as (5.5 with 5.0's rules, refused where they differ).
+    version: Option<Program>,
     picture: Option<PathBuf>,
     levels: Option<PathBuf>,
     /// Send finished pixels to standard output as they are drawn (task T2, the live
@@ -169,12 +170,8 @@ fn parse_args(args: &[String]) -> Result<Args, String> {
                 a.mode = RenderMode::choose(&on);
             }
             "--as" => {
-                a.version = Some(match take(args, &mut i, "--as")?.as_str() {
-                    "3.0" => RenderAs::Bryce30,
-                    "3.1" => RenderAs::Bryce31,
-                    "5.0" => RenderAs::Bryce50,
-                    other => return Err(format!("--as {other:?} is not one of 3.0, 3.1 and 5.0")),
-                });
+                let w = take(args, &mut i, "--as")?;
+                a.version = Some(Program::parse(&w).ok_or_else(|| format!("--as {w:?} is not one of {}", Program::NAMES))?);
             }
             other => return Err(format!("unknown argument {other:?}")),
         }
@@ -278,13 +275,11 @@ fn read_json(args: &[String]) -> Result<String, String> {
         }
         "kept-libraries" => {
             let sub = load(&flag("--substrate").ok_or(usage)?)?;
-            let version = match flag("--as").as_deref() {
-                Some("3.0") => RenderAs::Bryce30,
-                Some("3.1") => RenderAs::Bryce31,
-                Some("5.0") => RenderAs::Bryce50,
-                _ => return Err(format!("--as must be one of 3.0, 3.1 and 5.0; {usage}")),
+            let program = match flag("--as").as_deref().and_then(Program::parse) {
+                Some(p) => p,
+                None => return Err(format!("--as must be one of {}; {usage}", Program::NAMES)),
             };
-            Ok(scene_export::kept_libraries_json(&sub, version).write())
+            Ok(scene_export::kept_libraries_json(&sub, program).write())
         }
         "document" => {
             let file = rest.first().ok_or(usage)?;
@@ -298,10 +293,10 @@ fn read_json(args: &[String]) -> Result<String, String> {
             let scene = Scene::read(&bytes, flavour).map_err(|e| format!("{file}: {e}"))?;
             let version = match flag("--as").as_deref() {
                 None => None,
-                Some("3.0") => Some(RenderAs::Bryce30),
-                Some("3.1") => Some(RenderAs::Bryce31),
-                Some("5.0") => Some(RenderAs::Bryce50),
-                Some(other) => return Err(format!("--as must be one of 3.0, 3.1 and 5.0, not {other}")),
+                Some(w) => match Program::parse(w) {
+                    Some(p) => Some(p.render_as()),
+                    None => return Err(format!("--as must be one of {}, not {w}", Program::NAMES)),
+                },
             };
             Ok(scene_export::document_json_as(&scene, version).write())
         }
@@ -425,11 +420,18 @@ fn read_document(path: &Path, version: RenderAs, substrate: &substrate::Substrat
     Ok(scene)
 }
 
+/// The choices of a document render of `program` over the substrate: as `picture::choices_from`, and
+/// for Bryce 5.5 the refusal of what 5.5 is known to do differently.
+fn program_choices(substrate: &substrate::Substrate, program: Program) -> OpenChoices {
+    OpenChoices { five_five: program.is_five_five(), ..picture::choices_from(substrate) }
+}
+
 /// A frame at a time, as the first render of a program just started.
-fn render_at_time(path: &Path, version: RenderAs, substrate: &substrate::Substrate, t: f64) -> Result<Picture, String> {
+fn render_at_time(path: &Path, program: Program, substrate: &substrate::Substrate, t: f64) -> Result<Picture, String> {
+    let version = program.render_as();
     let scene = read_document(path, version, substrate)?;
     let (picture, _counts) =
-        render_frame_lit(&scene, version, t, &picture::choices_from(substrate)).map_err(|e| e.to_string())?;
+        render_frame_lit(&scene, version, t, &program_choices(substrate, program)).map_err(|e| e.to_string())?;
     Ok(picture)
 }
 
@@ -437,11 +439,12 @@ fn render_at_time(path: &Path, version: RenderAs, substrate: &substrate::Substra
 /// file that cannot be written ends the run with failure after the files already written.
 fn render_range(
     path: &Path,
-    version: RenderAs,
+    program: Program,
     substrate: &substrate::Substrate,
     range: Option<(u64, u64)>,
     series: Option<&Path>,
 ) -> Result<(), String> {
+    let version = program.render_as();
     let scene = read_document(path, version, substrate)?;
     // : the whole animation is a movie's range (its frame numbers, the
     // first at its start time, and as 5.0 the whole picture); a range of frame numbers given
@@ -449,13 +452,13 @@ fn render_range(
     // nothing, the implementer's choice).
     let (frames, mut run): (Vec<(u64, Option<f64>)>, FrameSeries) = match range {
         Some((first, last)) => {
-            ((first..=last).map(|k| (k, None)).collect(), FrameSeries::new(&scene, version, picture::choices_from(substrate)))
+            ((first..=last).map(|k| (k, None)).collect(), FrameSeries::new(&scene, version, program_choices(substrate, program)))
         }
         None => {
             let movie = whole_animation(&scene, version).map_err(|e| e.to_string())?;
             (
                 movie.frames().map(|(k, t)| (k, Some(t))).collect(),
-                FrameSeries::movie(&scene, version, picture::choices_from(substrate)),
+                FrameSeries::movie(&scene, version, program_choices(substrate, program)),
             )
         }
     };
@@ -502,7 +505,7 @@ fn shared_draws(description: bool, asked: Option<&str>) -> stecyk3d::render::Sha
 
 fn render_document(
     path: &Path,
-    version: RenderAs,
+    program: Program,
     substrate: &substrate::Substrate,
     scattered: bool,
     rows: bool,
@@ -510,13 +513,14 @@ fn render_document(
     threads: usize,
     emit: &mut dyn FnMut(u32, u32, &[u8]),
 ) -> Result<Picture, String> {
+    let version = program.render_as();
     let scene = read_document(path, version, substrate)?;
     let choices = OpenChoices {
         scattered: scattered.then_some(SCATTERED_SEED),
         scattered_rows: rows,
         threads: Some(threads),
         shared_draws: shared_draws(false, None),
-        ..picture::choices_from(substrate)
+        ..program_choices(substrate, program)
     };
     if let Some(mode) = mode {
         let (picture, _counts) = render_mode(&scene, version, &choices, mode).map_err(|e| e.to_string())?;

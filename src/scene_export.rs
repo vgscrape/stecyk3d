@@ -457,11 +457,12 @@ pub fn library_json(lib: &Library) -> J {
     ])
 }
 
-/// The extractor's preset libraries (role 4): those of the folders of `version`'s order first
-/// (the program chosen), then every other in the substrate's listing order.
-pub fn kept_libraries_json(substrate: &Substrate, version: RenderAs) -> J {
+/// The extractor's preset libraries (role 4): those of the folders of the program's order first
+/// (the program chosen: a `RenderAs` or a `Program`, 5.5's own folder first for 5.5), then every
+/// other in the substrate's listing order.
+pub fn kept_libraries_json(substrate: &Substrate, program: impl Into<crate::version::Program>) -> J {
     let role = KeptRole::PresetLibrary;
-    let order = substrate.folder_order(version, role);
+    let order = substrate.folder_order_for(program.into(), role);
     let kept: Vec<_> = substrate.kept_files().iter().filter(|k| k.role == role).collect();
     let folder_of = |path: &str| crate::substrate::split_build(path).map(|(f, _)| f.to_string());
     let mut listed: Vec<&crate::substrate::KeptFile> = Vec::new();

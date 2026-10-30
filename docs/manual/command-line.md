@@ -7,14 +7,14 @@ The renderer is a separate program, so it does not need Blender at all. Use it t
 ## Render a saved scene
 
 ```
-stecyk3d-render [--substrate S] --document FILE.br5 --as 3.0|3.1|5.0 --picture OUT.png [--levels L] [--threads N]
+stecyk3d-render [--substrate S] --document FILE.br5 --as 3.0|3.1|5.0|5.5 --picture OUT.png [--levels L] [--threads N]
 ```
 
 | Option | Meaning |
 |---|---|
 | `--substrate S` | The substrate file. Optional if `BRYCE_SUBSTRATE` is set or the default place has one. |
 | `--document F` | A saved scene (`.br3` or `.br5`). |
-| `--as V` | Required. Render the way program 3.0, 3.1 or 5.0 does. |
+| `--as V` | Required. Render the way program 3.0, 3.1 or 5.0 does; 5.5 renders with 5.0's rules and refuses what 5.5 does differently ([Bryce 5.5](substrate.md#bryce-55)). |
 | `--picture OUT` | Where to write an 8-bit RGB PNG. |
 | `--levels L` | Also write the raw levels: width x height x 3 bytes, top row first. |
 | `--threads N` | Worker threads. `0` or absent: every core; `1`: the serial render. The picture is the same bytes either way. |

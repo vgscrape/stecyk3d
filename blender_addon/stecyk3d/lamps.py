@@ -4,7 +4,8 @@
 
 import math
 
-from .convert import FIVE, radial_light
+from . import names
+from .convert import radial_light
 from .numbers import single, singles, word
 from .solids import columns_times_units, own_transform, swap_yz
 
@@ -97,7 +98,7 @@ def _sorted_keys(keys, value_name, out_name, is_colour):
 def five_additions(light, program, units, own_diffuse=None, own_is_gel=False):
     """'s last paragraph: the fields a light gains as 5.0, and its switch word for its program."""
     flags = word(light["flags"])
-    five = program == FIVE
+    five = names.is_five(program)
     out = {}
     if not five:
         out["switches"] = flags & ~GRADIENT_BIT
