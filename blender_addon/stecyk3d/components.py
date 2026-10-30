@@ -79,6 +79,23 @@ def component_from_texture(texture, name, pictures=()):
             "mapping": copy.deepcopy(texture["mapping"]), "image": None}
 
 
+def _constant(stored, colour, unread, channel, side):
+    """A channel's constant A, B or alpha as the reader gives it, as single(s). The reader writes a number that is
+    not finite as null. Bryce's material records hold leftover bytes in constants the program never sets (the
+    colour channels' B and alpha of most presets of a library hold the same bytes whatever the material, and some
+    of them are not numbers): a mixed channel reads its B or alpha constant only where no texture stands in that
+    slot, the mix by altitude never reads alpha (src/shading/channels.rs), and a material with no volume bit never
+    reads its Volume density (it is 0, below). Such an unread constant that is not a number becomes 0, what a new
+    Bryce Mix node's input holds; the picture does not depend on it. One that would be read is refused, naming it."""
+    values = stored if colour else [stored]
+    if all(v is not None for v in values):
+        return singles(stored) if colour else single(stored)
+    if not unread:
+        raise Refused("the material's %s %s is not a number, and Bryce would read it" % (channel, side))
+    out = [0.0 if v is None else single(v) for v in values]
+    return out if colour else out[0]
+
+
 def material_from_record(material, textures, pictures=(), first_column=0):
     """: a material of the reader  as a Bryce material value: its flags, volume settings,
     each channel's A with its link , and every texture its channels name as a component, lettered in the
@@ -106,18 +123,21 @@ def material_from_record(material, textures, pictures=(), first_column=0):
     for name in names.CHANNELS:
         ch = material["channels"][name]
         colour = name in names.COLOUR_CHANNELS
-        value = singles(ch["a"]) if colour else single(ch["a"])
-        if name == "volume_density" and not out["flags"] & VOLUME_BITS:
+        no_volume = name == "volume_density" and not out["flags"] & VOLUME_BITS
+        value = _constant(ch["a"], colour, no_volume, name, "A")
+        if no_volume:
             value = 0.0  # Accuracy (-10-22): no volume bit, density 0 whatever is stored
         refs = [column_for(r) for r in ch["refs"]]
         w = word(ch["word"])
         link = None
         if w & (MIX_ALTITUDE_BIT | MIX_ALPHA_BIT):
-            b = singles(ch["b"]) if colour else single(ch["b"])
-            link = {"mix": "ALTITUDE" if w & MIX_ALTITUDE_BIT else "ALPHA",
+            by_altitude = bool(w & MIX_ALTITUDE_BIT)
+            b = _constant(ch["b"], colour, refs[1] is not None, name, "B")
+            alpha = _constant(ch["alpha"], False, by_altitude or refs[2] is not None, name, "alpha")
+            link = {"mix": "ALTITUDE" if by_altitude else "ALPHA",
                     "a": {"value": value, "texture": refs[0]},
                     "b": {"value": b, "texture": refs[1]},
-                    "alpha": {"value": single(ch["alpha"]), "texture": refs[2]}}
+                    "alpha": {"value": alpha, "texture": refs[2]}}
         elif w and refs[0] is not None:
             link = {"texture": refs[0], "output": channel_output(name)}
         out["channels"][name] = {"value": value, "link": link}
