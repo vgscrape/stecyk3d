@@ -30,8 +30,8 @@ def render_request(bryce_render, scene_flags, camera_focus=None):
     r = bryce_render
     program = r["program"]
     if program not in names.PROGRAM:
-        raise ValueError("program %r is not one of 3.0, 3.1, 5.0" % (program,))
-    five = program == FIVE
+        raise ValueError("program %r is not one of %s" % (program, ", ".join(names.PROGRAM)))
+    five = names.is_five(program)
     flags = word(scene_flags)
     antialias = int(r["antialias"])
     if str(antialias) not in names.ANTIALIAS:

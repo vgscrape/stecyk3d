@@ -32,13 +32,13 @@ If the substrate is missing, the Render tab shows an error box that says so and 
 
 ## Choosing the program version
 
-The renderer imitates three programs: 3.0, 3.1 and 5.0. The Render tab's **Program** setting chooses which one the picture follows. They differ in arithmetic and in features, so the same scene gives slightly different pictures, and some settings (marked in the panels) exist only for 5.0. Changing the program switches the sky and light defaults that still hold the other program's defaults.
+The renderer imitates three programs: 3.0, 3.1 and 5.0. The Render tab's **Program** setting chooses which one the picture follows; it also offers 5.5, which renders with 5.0's rules and refuses a sky with its own colours (Bryce 5.5 draws the moon's disc smaller: see [Bryce 5.5](substrate.md#bryce-55)). They differ in arithmetic and in features, so the same scene gives slightly different pictures, and some settings (marked in the panels) exist only for 5.0. Changing the program switches the sky and light defaults that still hold the other program's defaults.
 
 ## The Render tab
 
 | Setting | Meaning |
 |---|---|
-| Program | 3.0, 3.1 or 5.0 (above). |
+| Program | 3.0, 3.1, 5.0 or 5.5 (above). |
 | Cores | Kept for compatibility (above). |
 | Antialias | 0, 1, 2 or 4, as in the Bryce render dialog; for 5.0, 2 shows *Super rays* and 4 *Premium rays*. |
 | Bryce 5 box | Program 5.0 only: the switches and settings listed under [The Render tab's Bryce 5 box](#the-render-tabs-bryce-5-box). |

@@ -3739,6 +3739,12 @@ impl PlainSky {
         self.lit_air.is_none()
     }
 
+    /// Whether the sky has its own colours (and with them the sun's and moon's discs), not only the
+    /// plain colour: what a render as Bryce 5.5 is refused for (`version::FIVE_FIVE_MOON_DISC`).
+    pub(crate) fn has_own_colours(&self) -> bool {
+        self.colours.is_some() || self.five.as_ref().is_some_and(|f| f.colours.is_some())
+    }
+
     /// ; as 5.0 for versions 2 and 7,
     pub fn new(scene: &Scene, plan: &RenderPlan) -> Result<PlainSky, OpenItem> {
         let version = plan.version;

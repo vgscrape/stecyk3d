@@ -8,7 +8,7 @@
 
 import math
 
-from . import components
+from . import components, names
 from .create import terrain_scales
 from .numbers import single
 from .reader import heights_of
@@ -16,6 +16,11 @@ from .solids import BOX_FACTOR, BOX_SHAPES
 
 SUN_IN_VIEW_BIT = 0x200  # [format]
 PROGRAMS = ("3.0", "3.1", "5.0")  # program (the order of the reader's `worlds`)
+
+
+def reader_index(program):
+    """The place of `program` in the reader's `worlds` and `views`: 5.5 reads a document as 5.0 does."""
+    return PROGRAMS.index("5.0" if names.is_five(program) else program)
 MIN_PICTURE_SIDE = 4  # Blender's smallest render width and height
 WHOLE_IMPORT_MARK = "stecyk3d_whole_import"  # our own custom property on the scene
 FOV_SHARE = 0.8
@@ -111,7 +116,7 @@ def sun_lamp_data(sky):
 def camera_plan(camera, program, picture_size, units):
     """taken into Blender: the eye, a camera looking along the view's forward with its up, the angle the
     plane's width spans (0.8 of the field of view, widened by the zoom), the pan as Blender's shift."""
-    view = camera["views"][PROGRAMS.index(program)]
+    view = camera["views"][reader_index(program)]
     if view is None:
         view = next((v for v in camera["views"] if v is not None), None)
     if view is None:
@@ -187,7 +192,7 @@ def sky_plan(sky, edge_noise=None, program="3.0", camera=None):
         # : bit 0x200 says the direction is in the camera's frame. The add-on's sky word has the bit cleared and
         # gives the sun as a lamp's direction in the world, so the import turns it into the world's (found by
         # tests/blender_vs_bryce: every document with the bit set was lit from the wrong side).
-        view = camera["views"][PROGRAMS.index(program)]
+        view = camera["views"][reader_index(program)]
         if view is None:
             view = next((v for v in camera["views"] if v is not None), None)
         if view is not None:
@@ -275,7 +280,7 @@ def used_materials(document):
 
 def object_plan(o, program, units):
     """One document object as a Blender object: kind, name, matrix, Bryce marks and settings."""
-    world = o["worlds"][PROGRAMS.index(program)]
+    world = o["worlds"][reader_index(program)]
     if world is None:
         world = next((w for w in o["worlds"] if w is not None), None)
     matrix = blender_matrix(world, units) if world is not None else None
@@ -360,8 +365,8 @@ def plan_import(path, document, refusal, options, scene):
                 "reason": "the document's picture is %d by %d pixels and Blender's render size is at least %d by %d; "
                           "nothing was imported" % (width, height, MIN_PICTURE_SIDE, MIN_PICTURE_SIDE)}
     program = scene.get("program", "3.0")
-    if whole and is_five_document(path):
-        program = "5.0"  # : the older programs cannot open a .br5
+    if whole and is_five_document(path) and not names.is_five(program):
+        program = "5.0"  # : the older programs cannot open a .br5 (a scene set to 5.5 keeps 5.5)
     units = scene.get("units", 1.0)
     with_materials = whole or bool(options.get("materials"))
     with_sky = whole or bool(options.get("sky"))
@@ -383,7 +388,7 @@ def plan_import(path, document, refusal, options, scene):
         for o in document["objects"]:
             if o["kind"] == "camera":
                 continue  # the camera in use is made below, as the scene's (the reader lists no other)
-            if any(w is not None and any(v is None for v in w) for w in [o["worlds"][PROGRAMS.index(program)]]):
+            if any(w is not None and any(v is None for v in w) for w in [o["worlds"][reader_index(program)]]):
                 continue  # a track key placed it at a number that is not one (null): nothing of it is drawn
             plan["objects"].append(object_plan(o, program, units))
         plan["objects"].append({"kind": "light", "name": "sun", "object_type": "LIGHT", "lamp": "SUN",

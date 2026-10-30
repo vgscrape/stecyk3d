@@ -20,3 +20,9 @@
 {"build": "DAZ Bryce 5 (2006)", "family": "5", "role": "moon", "install_path": "data/moonimage.dat", "size": 65391, "sha256": "d722b7b7ffe81f5f9beda5aeb288be045929b588dfa30f7105253c3ff21ae0c5"}
 {"build": "DAZ Bryce 5 (2006)", "family": "5", "role": "stars", "install_path": "data/starcat.dat", "size": 808288, "sha256": "6c1255b89e8d88a7aa56f7d25ec7e59b2dbd1dd8ce097a97aef964e1e2421696"}
 {"build": "DAZ Bryce 5 (2006)", "family": "5", "role": "editor", "install_path": "data/terraineditor.dat", "size": 558895, "sha256": "358e50dbf8dafe2e588d4d5cb42a5ce1d04865a6f34119c31f820a822c7933ad"}
+{"build": "DAZ Bryce 5.5", "family": "55", "role": "program", "size": 5193787, "sha256": "5f50332b7b76725094d64b799fb0ef66dec44e8817bd4b2c6aab15776fe2c50b"}
+{"build": "DAZ Bryce 5.5", "family": "55", "role": "maths", "size": 1454139, "sha256": "41ad00e87aeab0682f8bdf47cf3faddc10dbeb7fdcf835a710a6b19f1f01446f"}
+{"build": "DAZ Bryce 5.5", "family": "55", "role": "menus", "install_path": "Data/dteditors.dat", "size": 853495, "sha256": "a26cb3c73206802eb0c5ef56d464bdeb46f19f1a57023caf3880101f5320a44f"}
+{"build": "DAZ Bryce 5.5", "family": "55", "role": "moon", "install_path": "Data/moonimage.dat", "size": 65391, "sha256": "b77d0bc64aa5bb24c8cb5a7ae25ad7765532d1d8103887e0c16a78b05d12cf83"}
+{"build": "DAZ Bryce 5.5", "family": "55", "role": "stars", "install_path": "Data/starcat.dat", "size": 808288, "sha256": "6c1255b89e8d88a7aa56f7d25ec7e59b2dbd1dd8ce097a97aef964e1e2421696"}
+{"build": "DAZ Bryce 5.5", "family": "55", "role": "editor", "install_path": "Data/terraineditor.dat", "size": 563008, "sha256": "cd1bdb46fdb9365ba31f73b889072f7e09f283e3c43da04730cafaf36829784f"}

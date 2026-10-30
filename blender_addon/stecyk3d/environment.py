@@ -4,6 +4,7 @@
 """The parts of the environment that are single settings: the sky's ambient colour elsewhere, the sun's soft
 shadow numbers, the sun's direction and the scene's switch word. Pure Python."""
 
+from . import names
 from .axes import to_bryce_direction
 from .numbers import single, singles, word
 
@@ -14,7 +15,7 @@ BRYCE5_SWITCH_BITS = 0x40 | 0x40000 | 0x80000 | 0x400000 | 0x800000 | 0x1000000 
 
 def free_bits(program):
     """The bits of the scene's switch word that no render of `program` reads: Bryce 5's, as 3.0 or 3.1."""
-    return 0 if program == "5.0" else BRYCE5_SWITCH_BITS
+    return 0 if names.is_five(program) else BRYCE5_SWITCH_BITS
 
 
 def cumulus_shade(sky):

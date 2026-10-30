@@ -94,12 +94,20 @@ pub struct Described {
     /// The render as 5.0 ignores the structure code (Open): a description render is
     /// never a reproduction of a stored picture.
     pub ignore_structure_code: bool,
+    /// The version named is 5.5, rendered with 5.0's rules (`version`) and refused where 5.5 is
+    /// known to differ (`OpenChoices::five_five`).
+    pub five_five: bool,
 }
 
 impl Described {
     /// The choices for a render of this description, over the substrate's tables.
     pub fn choices(&self, base: OpenChoices) -> OpenChoices {
-        OpenChoices { no_preview: self.no_preview, ignore_structure_code: self.ignore_structure_code, ..base }
+        OpenChoices {
+            no_preview: self.no_preview,
+            ignore_structure_code: self.ignore_structure_code,
+            five_five: self.five_five,
+            ..base
+        }
     }
 }
 
@@ -1621,12 +1629,11 @@ pub fn describe_value(v: &Value, tables: &Tables<'_>) -> Rd<Described> {
         ));
     }
     let render = v.get("render").ok_or_else(|| DescriptionError("the description has no render".to_owned()))?;
-    let version = match render.get("version").and_then(Value::as_str) {
-        Some("3.0") => RenderAs::Bryce30,
-        Some("3.1") => RenderAs::Bryce31,
-        Some("5.0") => RenderAs::Bryce50,
-        _ => return err("the render's version is not one of 3.0, 3.1 and 5.0"),
+    let program = match render.get("version").and_then(Value::as_str).and_then(crate::version::Program::parse) {
+        Some(p) => p,
+        None => return err(format!("the render's version is not one of {}", crate::version::Program::NAMES)),
     };
+    let version = program.render_as();
     let units = f64_at(render, "units", 1.0)?;
     if !(units > 0.0) {
         return err("the render's units must be above 0");
@@ -2060,6 +2067,7 @@ pub fn describe_value(v: &Value, tables: &Tables<'_>) -> Rd<Described> {
         version,
         no_preview,
         ignore_structure_code: version == RenderAs::Bryce50,
+        five_five: program.is_five_five(),
     })
 }
 

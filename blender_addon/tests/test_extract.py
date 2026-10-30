@@ -94,6 +94,34 @@ class ExtractCommand(unittest.TestCase):
         self.assertEqual(extract.file_lines("x\nBryce 3D.exe: tables taken: perm, leaf\n"),
                          ["Bryce 3D.exe: found perm, leaf"])
 
+    def test_five_five_folder(self):
+        self.assertEqual(extract.VERSIONS, ("3.0", "3.1", "5.0", "5.5"))
+        with tempfile.TemporaryDirectory() as root:
+            for sub, exe in (("five", "Bryce5.exe"), ("daz/Bryce 5.5", "BRYCE55.EXE")):
+                os.makedirs(os.path.join(root, sub))
+                open(os.path.join(root, sub, exe), "w").close()
+            five, five_five = os.path.join(root, "five"), os.path.join(root, "daz")
+            self.assertEqual(extract.program_kind(five_five), "5.5")  # one folder down, any letter case
+            self.assertEqual(extract.kind_mark("5.5", five_five), (True, "looks like a Bryce 5.5 install"))
+            self.assertEqual(extract.kind_mark("5.0", five_five), (False, "looks like Bryce 5.5, not 5.0"))
+            self.assertEqual(extract.kind_mark("5.5", five), (False, "looks like Bryce 5.0, not 5.5"))
+            self.assertFalse(extract.kind_mark("3.0", five_five)[0])
+            program = os.path.join(root, "stecyk3d-extract")
+            open(program, "w").close()
+            self.assertEqual(extract.problems(program, {"5.5": five_five}), [])
+            self.assertIn("5.5", extract.problems(program, {})[0])
+        self.assertEqual(extract.extract_command("x", "", {"5.0": "/c", "5.5": "/d"}),
+                         ["x", "--bryce", "5.0=/c", "--bryce", "5.5=/d"])
+        self.assertEqual(extract.success_lines([("5.5", "/d")], "/d: recognised as DAZ Bryce 5.5\n/d: 112 kept files taken under Z\n"),
+                         ["Bryce 5.5: DAZ Bryce 5.5 recognised, 112 kept files"])
+
+    def test_five_five_guessed_from_an_old_list(self):
+        self.assertEqual(extract.guess_version("C:/Program Files (x86)/DAZ/Bryce 5.5"), "5.5")
+        self.assertEqual(extract.guess_version("/x/Bryce55"), "5.5")
+        self.assertEqual(extract.guess_version("/x/Corel/Bryce 5"), "5.0")
+        moved = extract.migrate_install_folders("/x/Bryce 5;/x/DAZ/Bryce 5.5", {v: "" for v in extract.VERSIONS})
+        self.assertEqual(moved, {"3.0": "", "3.1": "", "5.0": "/x/Bryce 5", "5.5": "/x/DAZ/Bryce 5.5"})
+
 
 if __name__ == "__main__":
     unittest.main()

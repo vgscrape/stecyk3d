@@ -27,7 +27,7 @@ def human(key):
 
 
 def is_five(context):
-    return getattr(context.scene, names.SCENE_RENDER_GROUP).program == "5.0"
+    return names.is_five(getattr(context.scene, names.SCENE_RENDER_GROUP).program)
 
 
 def light_group(light):
@@ -389,7 +389,7 @@ def sky_faults(world, program):
             found.append("the sky's %s layer: %s" % (layer.capitalize(), error))
             continue
         if source is None:
-            if flags & 1 and (program == "5.0" or flags & 0x10) and flags & bit:
+            if flags & 1 and (names.is_five(program) or flags & 0x10) and flags & bit:
                 found.append("the sky's %s layer is switched on and has no texture: link a Bryce texture to the Bryce "
                              "Sky node's %s input (Shader Editor, World), or switch %s off"
                              % (layer.capitalize(), layer, layer.capitalize()))

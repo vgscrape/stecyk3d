@@ -38,6 +38,8 @@ class Stecyk3DPreferences(bpy.types.AddonPreferences):
                                        description="Your Bryce 3.1 install folder (optional)")
     bryce_50: bpy.props.StringProperty(name="Bryce 5.0 folder", subtype="DIR_PATH",
                                        description="Your Bryce 5.0 install folder (optional)")
+    bryce_55: bpy.props.StringProperty(name="Bryce 5.5 folder", subtype="DIR_PATH",
+                                       description="Your Bryce 5.5 install folder (optional)")
     # Advanced overrides: empty means "find it yourself".
     substrate: bpy.props.StringProperty(name="Substrate file", subtype="FILE_PATH")
     renderer_program: bpy.props.StringProperty(name="Renderer program", subtype="FILE_PATH")
@@ -49,7 +51,7 @@ class Stecyk3DPreferences(bpy.types.AddonPreferences):
     earlier_values_read: bpy.props.BoolProperty(options={"HIDDEN"})
 
     def fields(self):
-        return {"3.0": self.bryce_30, "3.1": self.bryce_31, "5.0": self.bryce_50}
+        return {"3.0": self.bryce_30, "3.1": self.bryce_31, "5.0": self.bryce_50, "5.5": self.bryce_55}
 
     def draw(self, context):
         from . import extract
@@ -58,14 +60,14 @@ class Stecyk3DPreferences(bpy.types.AddonPreferences):
         # button, then what is found, read only), then the closed Advanced subpanel.
         box = layout.box().column()
         box.label(text="Your Bryce", icon="FILE_FOLDER")
-        for line in ("The folder of your own installed Bryce 3D 3.0 or 3.1, and of your Bryce 5 if you have it (each optional).",
+        for line in ("The folder of your own installed Bryce 3D 3.0 or 3.1, and of your Bryce 5.0 or 5.5 if you have it (each optional).",
                      "Make substrate reads a few of Bryce's own tables (its noise, its leaf, its dither) out of them once, and keeps",
                      "a copy of the files it reads after (the moon, Bryce 5's stars and leaves, the preset libraries) beside them.",
-                     "Bryce 3D gives what Stecyk3D's renders as 3.0 and 3.1 need; Bryce 5 what renders as 5.0 need besides.",
+                     "Bryce 3D gives what Stecyk3D's renders as 3.0 and 3.1 need; Bryce 5.0 or 5.5 what renders as 5.0 and 5.5 need.",
                      "After Make substrate, Bryce may be uninstalled."):
             box.label(text=line)
-        for field in ("bryce_30", "bryce_31", "bryce_50"):
-            version = {"bryce_30": "3.0", "bryce_31": "3.1", "bryce_50": "5.0"}[field]
+        for field in ("bryce_30", "bryce_31", "bryce_50", "bryce_55"):
+            version = {"bryce_30": "3.0", "bryce_31": "3.1", "bryce_50": "5.0", "bryce_55": "5.5"}[field]
             box.prop(self, field)
             ok, text = extract.kind_mark(version, bpy.path.abspath(getattr(self, field)))
             row = box.row()
@@ -118,6 +120,7 @@ class MakeSubstrate(bpy.types.Operator):
         if prefs.install_folders.strip():  # an older saved list moves into the empty fields, once
             moved = extract.migrate_install_folders(prefs.install_folders, prefs.fields())
             prefs.bryce_30, prefs.bryce_31, prefs.bryce_50 = moved["3.0"], moved["3.1"], moved["5.0"]
+            prefs.bryce_55 = moved.get("5.5", "")
             prefs.install_folders = ""
         fields = {v: bpy.path.abspath(f) for v, f in prefs.fields().items() if f}
         program, tried = extract.search_program(

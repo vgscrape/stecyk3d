@@ -26,7 +26,16 @@ NODE_TYPES = (
 SOCKET_TYPES = ("BryceColorSocket", "BryceValueSocket", "BryceSignalSocket", "BryceComponentSocket")
 
 # Enum tables: identifier -> the number Blender keeps ("the number given after each identifier").
-PROGRAM = {"3.0": 0, "3.1": 1, "5.0": 2}  # program
+PROGRAM = {"3.0": 0, "3.1": 1, "5.0": 2, "5.5": 3}  # program
+# The Bryce 5 programs: 5.5 is rendered with 5.0's rules and its settings are 5.0's (docs/manual/substrate.md,
+# "Bryce 5.5"); everything the add-on does "as 5.0" it does for both.
+FIVE_PROGRAMS = ("5.0", "5.5")
+
+
+def is_five(program):
+    """Whether `program` ("3.0", "3.1", "5.0", "5.5") is a Bryce 5 program, read and shown as 5.0."""
+    return program in FIVE_PROGRAMS
+
 ANTIALIAS = {"0": 0, "1": 1, "2": 2, "4": 3}  # antialias (identifier is the setting's number)
 SPATIAL_KIND = {"TREE": 0, "GRID": 1}  # spatial_kind
 SPATIAL_KIND_CODE = {"TREE": "bspT", "GRID": "grid"}  # spatial_kind (offset 176) [format]
