@@ -54,11 +54,11 @@ DAZ Bryce 5.5 (2005; its program is `Bryce55.exe`, its maths library `B55Axiom.d
 
 **Rendering as 5.5.** "5.5" is a program choice beside 3.0, 3.1 and 5.0 (the Render tab's program, the description's version, `--as 5.5`). A render as 5.5 uses 5.0's rules, apart from what is known to differ:
 
-- Bryce 5.5 draws the moon's disc, and takes the moon's phase, at half the angle 5.0 does (its sky code multiplies the size by 1.8 and by π/360 where 5.0 multiplies by π/180; the sun's disc is unchanged). That is not drawn yet, so a render as 5.5 whose sky has its own colours (the sky's colours, which carry the sun's and moon's discs) is refused with a message that says so. A sky of the plain colour only renders, and gives exactly 5.0's picture, and so do the render modes (mask, distance, altitude), which draw no sky. To render a scene whose sky is refused, choose 5.0.
+- Bryce 5.5 draws the moon's disc, and takes the moon's phase, at half the angle 5.0 does (its sky code multiplies the size by 1.8 and by π/360 where 5.0 multiplies by π/180; the sun's disc is unchanged). A render as 5.5 does the same, so a moon in view is half the size it is as 5.0; everything else in the picture is 5.0's.
 
 The preset libraries offered for 5.5 are 5.5's own first, then the other Bryce 5 installs'.
 
-How this was found: by comparing the two programs' code, function by function, with the debug symbols 5.5 ships (`Bryce55.pdb`). 5.5 was built with other compiler settings, so the comparison is of the arithmetic each function does and the constants it reads, not of bytes; it covered the renderer's sources (sky, textures and noise, materials, rays, objects, trees, terrain) but was not complete, and 5.5's pictures have not been compared with Bryce 5.5's own. Scene documents (`.br5`) and preset libraries of 5.5 are read as 5.0's; two of 5.5's material libraries (`Waters/Calm.mat` and `Waters/Turbulent.mat`) are stored in the blank-led form of Bryce 5's documents and are not read yet.
+How this was found: by comparing the two programs' code, function by function, with the debug symbols 5.5 ships (`Bryce55.pdb`). 5.5 was built with other compiler settings, so the comparison is of the arithmetic each function does and the constants it reads, not of bytes; it covered the renderer's sources (sky, textures and noise, materials, rays, objects, trees, terrain) but was not complete, and 5.5's pictures have not been compared with Bryce 5.5's own. Scene documents (`.br5`) and preset libraries of 5.5 are read as 5.0's, all 49 libraries among them (two, `Waters/Calm.mat` and `Waters/Turbulent.mat`, are stored in the blank-led form of Bryce 5's documents).
 
 ## If the file is refused
 

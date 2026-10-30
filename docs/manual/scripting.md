@@ -60,10 +60,10 @@ A longer one is `examples/lake/build_lake.py` in the repository: a moonlit lake 
 
 | Function | What it does |
 |---|---|
-| `begin(program="5.0", clear=False)` | Sets the render engine to Stecyk3D and the program (`"3.0"`, `"3.1"`, `"5.0"`). With `clear=True` (off by default, since it also empties a scene open in Blender), removes the scene's objects, gives it a new empty world and removes every datablock nothing uses any more. Returns the scene. |
+| `begin(program="5.0", clear=False)` | Sets the render engine to Stecyk3D and the program (`"3.0"`, `"3.1"`, `"5.0"`, `"5.5"`). With `clear=True` (off by default, since it also empties a scene open in Blender), removes the scene's objects, gives it a new empty world and removes every datablock nothing uses any more. Returns the scene. |
 | `preset_material(library, *names, channels=None)` | A new material from the first of the named presets of a material library that loads. The library is named as the Material panel shows it, without the folder in brackets (`"Waters&Liquids"`); a preset by its whole name or the start of it. Each preset that does not load is printed (`STECYK3D PRESET Rocks&Stones / Wet Rock won't load (...)`) and the next tried; the one used is printed too. `channels` puts Materials Lab values over the preset's: numbers, and colours as three display values (0 to 1, as the Bryce Material node shows them). |
 | `colour_material(name, rgb, roughness=0.8, metallic=0.0, glow=None)` | A Bryce material made from a Principled BSDF's colour (linear, as Blender's colour picker gives it), roughness and metallic, by the add-on's **Bryce material from the Blender shader**. `glow=(rgb, strength)` is the emission: Bryce's ambient colour and ambience, so the object lights itself. |
-| `shape(kind, name, location, scale=(1, 1, 1), rotation=(0, 0, 0), material=None)` | A Bryce shape as the Add menu makes it: plane, slab, cube, sphere, cylinder, cone, pyramid, torus, square, disc; metaball and tree with the program 5.0. Rotation in radians. Made directly, with no 3D cursor, selection or operator, so it works headless. |
+| `shape(kind, name, location, scale=(1, 1, 1), rotation=(0, 0, 0), material=None)` | A Bryce shape as the Add menu makes it: plane, slab, cube, sphere, cylinder, cone, pyramid, torus, square, disc; metaball and tree with the program 5.0 or 5.5. Rotation in radians. Made directly, with no 3D cursor, selection or operator, so it works headless. |
 | `terrain(name, n, centre, size, z_range, height, material=None)` | A Bryce terrain of n by n points (16, 32, ... 1024) spread over `size` (x, y) about `centre` (x, y), its heights `height(x, y)` in world units. `z_range` (low, high) is the height of the terrain's lowest and highest level; heights outside it are held to it and the number held is printed. Returns an object with `.object`, `.z_at(x, y)` and `.lowest_under(x, y, radius)`. |
 | `sky(world=None, **settings)` | Gives the world a Bryce Sky node if it has none, then sets the settings by name (the World tab's: `sun_intensity`, `haze`, `zenith`, `stars`, and its switches such as `flag_8`, Custom colours). Returns the node's settings, for reading or setting more. |
 | `light(name, kind="POINT", location=(0, 0, 0), direction=None, **settings)` | A lamp: POINT, SPOT or AREA with a Bryce Light node and its settings by name (`intensity`, `color`, `edge`, `reach`, ...), or a SUN. `direction` is the way from the scene to the light (the lamp's +Z); for a sun, the way to the sun. A sun's light is the sky's, so it takes no settings: use `sky(sun_intensity=..., sun_color=...)`. |
@@ -80,7 +80,7 @@ What is refused, with an error naming it:
 - a channel that is a mix of two values (Materials Lab's altitude or alpha blend): its constant is not what shows;
 - a terrain side that is not 16, 32, ... 1024, an empty `z_range` or size, and a height function that gives no number;
 - a sky or light setting that does not exist, a value of the wrong kind, and a setting only Bryce 5.0 has (`sky5_...`, a light's `radius`, ...) while the program is 3.0 or 3.1;
-- a metaball or tree while the program is not 5.0, and a shape kind the Add menu does not make;
+- a metaball or tree while the program is not 5.0 or 5.5, and a shape kind the Add menu does not make;
 - settings given to a SUN.
 
 ### Setting things on a terrain

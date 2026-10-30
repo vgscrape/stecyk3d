@@ -50,7 +50,7 @@ def log(*parts):
 # ---------------------------------------------------------------- the scene
 
 def begin(program="5.0", clear=False, scene=None):
-    """The scene renders with Stecyk3D as the program given ("3.0", "3.1" or "5.0"). With `clear` (asked for, never the
+    """The scene renders with Stecyk3D as the program given ("3.0", "3.1", "5.0" or "5.5"). With `clear` (asked for, never the
     default: it empties a scene open in Blender too), its objects go, it gets a new empty world, and every datablock nothing uses any more is removed, so a script (or each
     variant of render_variants) starts from nothing. Returns the scene."""
     scene = _scene(scene)
@@ -161,7 +161,7 @@ def shape(kind, name, location, scale=(1.0, 1.0, 1.0), rotation=(0.0, 0.0, 0.0),
     metaball and tree with the program 5.0), as the Add menu makes it, at `location` with `scale` and `rotation`
     (radians, XYZ), linked into `collection` (the scene's by default). Made by the data API: no 3D cursor, no
     selection, no operator. Returns the object."""
-    if kind in create.FIVE_ONLY_SHAPES and _program() != "5.0":
+    if kind in create.FIVE_ONLY_SHAPES and not names.is_five(_program()):
         raise ValueError("a %s is a shape of the program 5.0; the scene's program is %s" % (kind, _program()))
     made = create.new_shape(kind, location)
     obj = stand_in_object(name, kind, made["torus"], collection or _scene().collection)
@@ -203,7 +203,7 @@ def _known(group, what, settings, program, five_only):
     for key in settings:
         if key not in known:
             raise ValueError("%s has no setting %r" % (what, key))
-        if program != "5.0" and five_only(key):
+        if not names.is_five(program) and five_only(key):
             raise ValueError("%s setting %r is the program 5.0's; the scene's program is %s" % (what, key, program))
 
 

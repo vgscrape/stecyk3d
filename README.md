@@ -2,7 +2,7 @@
 
 > **Experimental.** First release. It draws most scenes the way the Bryce programs do and refuses, with a reason, what it cannot draw. Read [the known differences](docs/manual/troubleshooting.md) before relying on a picture.
 
-Stecyk3D is a renderer, written in Rust with no third-party dependencies, that draws Bryce 3.0, 3.1 and 5.0 scenes the way those programs do, and a Blender add-on ("Stecyk3D for Blender") that lets you render your Blender scenes with it: F12, the Rendered viewport, Bryce material, sky and light nodes in the Shader Editor, Bryce shapes and terrains in the Add menu, and import of saved `.br3` / `.br5` scenes. The renderer is a separate program the add-on starts, so it also runs on its own from the command line.
+Stecyk3D is a renderer, written in Rust with no third-party dependencies, that draws Bryce 3.0, 3.1, 5.0 and 5.5 scenes the way those programs do, and a Blender add-on ("Stecyk3D for Blender") that lets you render your Blender scenes with it: F12, the Rendered viewport, Bryce material, sky and light nodes in the Shader Editor, Bryce shapes and terrains in the Add menu, and import of saved `.br3` / `.br5` scenes. The renderer is a separate program the add-on starts, so it also runs on its own from the command line.
 
 ![Stecyk3D in Blender: the Rendered viewport, a Bryce material's nodes in the Shader Editor and the Bryce material panel](docs/images/blender-window.png)
 
@@ -31,7 +31,7 @@ The add-on does not contain the programs; build them with `cargo build --release
 
 ## You need your own Bryce
 
-The renderer needs some fixed data tables and a few data files (a moon picture, a star catalogue, tree leaves, preset libraries). **None of it is in this package.** `stecyk3d-extract` (the add-on's *Make substrate* button) reads them once, on your machine, from your own Bryce 3D 3.0, 3.1 or Bryce 5.0 install and writes a private "substrate" file. Without it, a render stops and says what is missing.
+The renderer needs some fixed data tables and a few data files (a moon picture, a star catalogue, tree leaves, preset libraries). **None of it is in this package.** `stecyk3d-extract` (the add-on's *Make substrate* button) reads them once, on your machine, from your own Bryce 3D 3.0, 3.1, Bryce 5.0 or 5.5 install and writes a private "substrate" file. Without it, a render stops and says what is missing.
 
 ## Documentation
 

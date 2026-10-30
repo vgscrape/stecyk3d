@@ -92,6 +92,12 @@ fn moon_picture(
 
 /// Compute a picture case. (Kind `picture`)
 pub fn compute(v: &Value, version: RenderAs, ctx: Context<'_>) -> Outcome {
+    compute_as(v, crate::version::Program::from(version), ctx)
+}
+
+/// As `compute`, for a program: 5.5 renders with 5.0's rules and 5.5's moon disc.
+pub fn compute_as(v: &Value, program: crate::version::Program, ctx: Context<'_>) -> Outcome {
+    let version = program.render_as();
     let Some(document) = v.get("document").and_then(Value::as_str) else {
         return Outcome::refused("no document");
     };
@@ -108,6 +114,7 @@ pub fn compute(v: &Value, version: RenderAs, ctx: Context<'_>) -> Outcome {
         Err(e) => return Outcome::refused(format!("document {}: {e:?}", path.display())),
     };
     let mut choices = choices_from(substrate);
+    choices.five_five = program.is_five_five();
     if catalogue_sky(&scene, version) {
         choices.star_catalogue = star_catalogue(substrate);
         choices.star_colours = substrate.star_colours().ok().copied();

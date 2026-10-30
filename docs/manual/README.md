@@ -1,6 +1,6 @@
 # Stecyk3D user manual
 
-Stecyk3D is a render engine for Blender. It draws your Blender scene the way Bryce 3D 3.0, 3.1 or Bryce 5.0 would, with a renderer written in Rust. You work in Blender as usual and press F12.
+Stecyk3D is a render engine for Blender. It draws your Blender scene the way Bryce 3D 3.0, 3.1 or Bryce 5.0 or 5.5 would, with a renderer written in Rust. You work in Blender as usual and press F12.
 
 > **Experimental.** This is a first release. It draws most scenes the way the Bryce programs do, and says so plainly when it cannot. See [Known differences and limits](troubleshooting.md) before you rely on a picture.
 
@@ -19,5 +19,5 @@ For programmers there is also [How it works](../how-it-works/README.md).
 ## What you need
 
 - Blender 4.2 or newer (developed and tested with Blender 5.2).
-- Your own copy of Bryce 3D 3.0, 3.1 and/or Bryce 5.0. Stecyk3D contains no Bryce data; it reads a few tables and data files from your install, once, on your machine.
+- Your own copy of Bryce 3D 3.0, 3.1 and/or Bryce 5.0 or 5.5. Stecyk3D contains no Bryce data; it reads a few tables and data files from your install, once, on your machine.
 - A Rust toolchain to build the renderer.

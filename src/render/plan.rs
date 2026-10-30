@@ -431,9 +431,8 @@ pub struct OpenChoices {
     /// again, so it is not made twice (wash-vol: 20 s of 69).
     pub skip_scattered_preview: bool,
     /// The render is of Bryce 5.5 (`version::Program::Bryce55`), whose rules are 5.0's apart from
-    /// the differences the comparison of the two programs found: a plan whose sky has the sun's
-    /// and moon's colours, whose moon disc 5.5 draws at half 5.0's angle, is refused
-    /// (`version::FIVE_FIVE_MOON_DISC`).
+    /// the differences the comparison of the two programs found: its sky draws the moon's disc,
+    /// and takes the moon's phase, at half 5.0's angle (`sky::sky_colours`).
     pub five_five: bool,
 }
 
@@ -1414,6 +1413,8 @@ fn region_of(s: &DocSettings, whole_picture: bool) -> Result<Region, RenderError
 #[derive(Clone, Debug)]
 pub struct RenderPlan {
     pub version: RenderAs,
+    /// The render is of Bryce 5.5 (with `version` 5.0): the sky draws the moon's disc at half 5.0's angle.
+    pub five_five: bool,
     /// The whole picture's size : the picture a render writes. point 6
     pub width: u32,
     pub height: u32,
@@ -1655,8 +1656,9 @@ impl RenderPlan {
             pyramid_normal: choices.pyramid_normal.unwrap_or([f64::NAN; 2]),
             shadow: false,
         };
-        let plan = RenderPlan {
+        Ok(RenderPlan {
             version,
+            five_five: choices.five_five,
             width,
             height,
             region,
@@ -1685,23 +1687,18 @@ impl RenderPlan {
             star_list: if choices.star_list_held { StarListUse::Held } else { StarListUse::Make },
             give_up_at: None,
             independent_draws: choices.shared_draws == SharedDraws::Independent,
-        };
-        // Bryce 5.5: the sky's own colours carry the moon's disc, which 5.5 draws differently. A sky
-        // that cannot be made is left for the render to refuse with its own reason.
-        if choices.five_five && crate::render::lit::PlainSky::new(scene, &plan).is_ok_and(|sky| sky.has_own_colours()) {
-            return Err(refused("5.5", crate::version::FIVE_FIVE_MOON_DISC));
-        }
-        Ok(plan)
+        })
     }
 
     /// The plan of a render mode : as `new`, except that a pyramid does not need the
     /// `pyramid` table to be planned. Without the table its sides meet nothing, and the mode's
     /// rules refuse any ray that could have met them (`modes::ModeRules`).
     /// . (A pyramid without the `pyramid` table)
-    /// A mode draws no sky, so Bryce 5.5's moon disc does not refuse it.
     pub fn new_for_mode(scene: &Scene, version: RenderAs, choices: &OpenChoices) -> Result<RenderPlan, RenderError> {
-        let pyramid_normal = choices.pyramid_normal.or(Some([f64::NAN; 2]));
-        let marked = OpenChoices { pyramid_normal, five_five: false, ..choices.clone() };
+        if choices.pyramid_normal.is_some() {
+            return RenderPlan::new(scene, version, choices);
+        }
+        let marked = OpenChoices { pyramid_normal: Some([f64::NAN; 2]), ..choices.clone() };
         RenderPlan::new(scene, version, &marked)
     }
 

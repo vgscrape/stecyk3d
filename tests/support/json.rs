@@ -170,16 +170,15 @@ pub fn read_lines(path: &str) -> Option<Vec<String>> {
     }
 }
 
-pub const VERSIONS: [&str; 3] = ["3.0", "3.1", "5.0"];
+pub const VERSIONS: [&str; 4] = ["3.0", "3.1", "5.0", "5.5"];
 
+/// The rules a program renders by (5.5: 5.0's).
 pub fn version(s: &str) -> stecyk3d::version::RenderAs {
-    use stecyk3d::version::RenderAs;
-    match s {
-        "3.0" => RenderAs::Bryce30,
-        "3.1" => RenderAs::Bryce31,
-        "5.0" => RenderAs::Bryce50,
-        other => panic!("unknown program {other}"),
-    }
+    program(s).render_as()
+}
+
+pub fn program(s: &str) -> stecyk3d::version::Program {
+    stecyk3d::version::Program::parse(s).unwrap_or_else(|| panic!("unknown program {s}"))
 }
 
 pub fn bits3_32(c: [f32; 3]) -> [u32; 3] {

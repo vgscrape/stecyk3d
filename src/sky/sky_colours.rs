@@ -46,6 +46,10 @@ pub const MOON_PICTURE: u32 = 0x20000;
 
 /// Δ, the double nearest 0.01745329251994 (not π/180).
 const DELTA: f64 = 0.01745329251994;
+/// The moon's Δ as Bryce 5.5: the double nearest 0.00872664625997, which is Δ/2 exactly. 5.5 multiplies the moon
+/// disc's z·1.8 by it where 5.0 multiplies by Δ, for the disc and for the phase alike; the sun's disc keeps Δ.
+/// (Found by comparing the two programs' sky code; docs/manual/substrate.md, "Bryce 5.5".)
+const DELTA_MOON_FIVE_FIVE: f64 = 0.00872664625997;
 /// The sun's disc factor and the moon's.
 const SUN_DISC: f64 = 1.22;
 const MOON_DISC: f64 = 1.8;
@@ -278,6 +282,11 @@ fn unit(f: fn(f64) -> ExtValue, x: f64) -> Option<ExtValue> {
 }
 
 /// FCOS, FSIN, FPTAN rounded once to a double (a NaN for an argument that is not finite).
+/// The Δ the moon's disc and phase are taken with: Bryce 5.5's or every other program's.
+fn moon_delta(five_five: bool) -> f64 {
+    if five_five { DELTA_MOON_FIVE_FIVE } else { DELTA }
+}
+
 fn fcos(x: f64) -> f64 {
     unit(cos_ext, x).map_or(f64::NAN, ExtValue::to_f64)
 }
@@ -445,7 +454,14 @@ impl SkyColours {
     /// or with bit 0x800). The word is taken to be within's Scope (`in_scope`); as
     /// 5.0 bit 0x1 and the further bits are not read.
     pub fn new(version: RenderAs, sun: &SunInputs, sky: &SkySettings) -> Option<SkyColours> {
+        SkyColours::new_as(version, false, sun, sky)
+    }
+
+    /// As `new`; `five_five`: as Bryce 5.5 (with `version` 5.0), whose moon's disc and phase take
+    /// `DELTA_MOON_FIVE_FIVE` where 5.0 takes Δ.
+    pub fn new_as(version: RenderAs, five_five: bool, sun: &SunInputs, sky: &SkySettings) -> Option<SkyColours> {
         let five = version == RenderAs::Bryce50;
+        let moon_delta = moon_delta(five && five_five);
         let w = if five {
             sky.switches & (GLOW_HUE_A | GLOW_HUE_B | DOME_AS_STORED | AIR_ON | super::colours::DOME_LIGHT_ON)
         } else {
@@ -504,19 +520,21 @@ impl SkyColours {
                 r
             })
         };
-        let angle = |factor: f64| match size {
-            None => factor * DELTA,
-            Some(r) => r * factor * DELTA,
+        let angle_by = |factor: f64, delta: f64| match size {
+            None => factor * delta,
+            Some(r) => r * factor * delta,
         };
+        let angle = |factor: f64| angle_by(factor, DELTA);
+        let moon_angle = angle_by(MOON_DISC, moon_delta);
         let sun_disc = fcos(angle(SUN_DISC));
-        let moon_disc = fcos(angle(MOON_DISC));
+        let moon_disc = fcos(moon_angle);
         let sun_edge = if sun_disc < CE_CAP { sun_disc } else { CE_CAP };
 
         // The halos (bit 0x10000, and 0x2000000 for 46 degrees).
         let halos = halos_of(w, &sky.discs);
 
         // The phase's weight (bit 0x40000).
-        let phase = (w & (MOON_PHASE | MOON_PICTURE) != 0).then(|| phase_of(version, s_dir, angle(MOON_DISC), sky.moon));
+        let phase = (w & (MOON_PHASE | MOON_PICTURE) != 0).then(|| phase_of(version, s_dir, moon_angle, sky.moon));
 
         Some(SkyColours {
             version,
@@ -551,7 +569,13 @@ impl SkyColours {
     /// , (The sky as 5.0, The halos, The
     /// phase's weight)
     pub fn new_bryce5(sun: &SunInputs, sky: &FiveColourSettings) -> Option<SkyColours> {
+        SkyColours::new_bryce5_as(false, sun, sky)
+    }
+
+    /// As `new_bryce5`; `five_five`: as Bryce 5.5, whose moon's disc and phase take `DELTA_MOON_FIVE_FIVE`.
+    pub fn new_bryce5_as(five_five: bool, sun: &SunInputs, sky: &FiveColourSettings) -> Option<SkyColours> {
         let version = RenderAs::Bryce50;
+        let moon_delta = moon_delta(five_five);
         let w = sky.switches;
         if w & (GLOW_HUE_A | GLOW_HUE_B | DOME_AS_STORED) == 0 || w & PLAIN_ONLY != 0 {
             return None;
@@ -609,15 +633,15 @@ impl SkyColours {
             1.0
         };
         let sun_disc = fcos(size * SUN_DISC * DELTA);
-        let moon_disc = fcos(size * MOON_DISC * DELTA);
+        let moon_disc = fcos(size * MOON_DISC * moon_delta);
         let sun_edge = if sun_disc < CE_CAP { sun_disc } else { CE_CAP };
 
         // Halo Rings and Secondary Ring.
         let halos = halos_of(w, &sky.discs);
 
-        // The phase's weight, τ = FPTAN(z·1.8·Δ).
+        // The phase's weight, τ = FPTAN(z·1.8·Δ) (as 5.5 Δ/2, the angle of the moon's disc).
         let phase = (w & (MOON_PHASE | MOON_PICTURE) != 0)
-            .then(|| phase_of(version, s_dir, size * MOON_DISC * DELTA, sky.moon));
+            .then(|| phase_of(version, s_dir, size * MOON_DISC * moon_delta, sky.moon));
 
         Some(SkyColours {
             version,
@@ -801,6 +825,13 @@ impl SkyColours {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn five_fives_moon_delta_is_half_of_fives() {
+        assert_eq!(DELTA_MOON_FIVE_FIVE.to_bits(), (DELTA / 2.0).to_bits());
+        assert_eq!(moon_delta(false).to_bits(), DELTA.to_bits());
+        assert_eq!(moon_delta(true).to_bits(), DELTA_MOON_FIVE_FIVE.to_bits());
+    }
 
     #[test]
     fn largest_channel_with_numbers_that_are_not() {

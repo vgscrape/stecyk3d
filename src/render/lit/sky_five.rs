@@ -118,9 +118,9 @@ pub(super) fn five_sky(
             (Some(c), Some(t)) => (c, t),
         };
         let colour = |r: &StarRecord| catalogue_colour(&table, r);
-        FiveSky::prepare(&sun, part, w, FieldSource::Catalogue { records: &records, colour: &colour }, true)
+        FiveSky::prepare_as(plan.five_five, &sun, part, w, FieldSource::Catalogue { records: &records, colour: &colour }, true)
     } else {
-        FiveSky::prepare(&sun, part, w, FieldSource::Seeded, make_list)
+        FiveSky::prepare_as(plan.five_five, &sun, part, w, FieldSource::Seeded, make_list)
     }
     .map_err(open::sky_five)?;
     // (The moon's picture, bit 0x20000 of W: the moon's disc where the sky draws
