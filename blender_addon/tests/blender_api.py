@@ -72,6 +72,8 @@ def check_scene(bpy, api, scene):
         assert tuple(round(v, 5) for v in obj.rotation_euler) == (0.1, 0.2, 0.3)
         assert obj.data.materials[0] == red and obj.name in scene.collection.objects
         assert (kind == "torus") == ("bryce_torus" in obj.keys())
+        if kind == "tree":  # a new tree's wood has no thickness, which the renderer refuses; the later render needs one
+            obj.bryce_tree.thickness, obj.bryce_tree.least = 0.026025, 0.005987
     expect_error(ValueError, "not a shape", api.shape, "teapot", "T", (0, 0, 0))
     print("API scene, shapes, colour material: ok")
 
