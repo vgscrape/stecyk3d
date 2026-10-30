@@ -306,10 +306,24 @@ impl FiveSky {
         source: FieldSource<'_>,
         make_list: bool,
     ) -> Result<FivePrepared, FiveOpen> {
+        FiveSky::prepare_as(false, sun, p, s, source, make_list)
+    }
+
+    /// As `prepare`; `five_five`: as Bryce 5.5, whose moon's disc is half 5.0's angle
+    /// (`SkyColours::new_bryce5_as`).
+    pub fn prepare_as(
+        five_five: bool,
+        sun: &SunInputs,
+        p: &FivePart,
+        s: &SkyAsFive,
+        source: FieldSource<'_>,
+        make_list: bool,
+    ) -> Result<FivePrepared, FiveOpen> {
         let w = s.switches;
         let mut discs = p.discs;
         discs[1] = s.horizon_factor;
-        let colours = SkyColours::new_bryce5(
+        let colours = SkyColours::new_bryce5_as(
+            five_five,
             sun,
             &FiveColourSettings {
                 switches: w,

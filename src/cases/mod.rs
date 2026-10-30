@@ -108,14 +108,9 @@ pub struct Context<'a> {
     pub substrate: Option<&'a Substrate>,
 }
 
-/// The version a case asks for. (`version`: 3.0, 3.1 or 5.0)
+/// The version a case asks for, as the rules it renders by. (`version`: 3.0, 3.1, 5.0 or 5.5)
 pub fn version_of(text: &str) -> Option<RenderAs> {
-    match text {
-        "3.0" => Some(RenderAs::Bryce30),
-        "3.1" => Some(RenderAs::Bryce31),
-        "5.0" => Some(RenderAs::Bryce50),
-        _ => None,
-    }
+    crate::version::Program::parse(text).map(crate::version::Program::render_as)
 }
 
 /// Answer one non-blank line of a case file. (Case files: unknown
@@ -136,11 +131,12 @@ fn compute(v: &Value, ctx: Context<'_>) -> Outcome {
     let Some(kind) = v.get("kind").and_then(Value::as_str) else {
         return Outcome::refused("no kind");
     };
-    let Some(version) = v.get("version").and_then(Value::as_str).and_then(version_of) else {
-        return Outcome::refused("no known version (3.0, 3.1, 5.0)");
+    let Some(program) = v.get("version").and_then(Value::as_str).and_then(crate::version::Program::parse) else {
+        return Outcome::refused(format!("no known version ({})", crate::version::Program::NAMES));
     };
+    let version = program.render_as();
     match kind {
-        "picture" => picture::compute(v, version, ctx),
+        "picture" => picture::compute_as(v, program, ctx),
         "texture" => texture::compute(v, version, ctx.substrate),
         // (kind tree).
         "tree" => tree::compute(v, version, ctx.substrate),
@@ -224,6 +220,7 @@ mod tests {
         assert_eq!(version_of("3.0"), Some(RenderAs::Bryce30));
         assert_eq!(version_of("3.1"), Some(RenderAs::Bryce31));
         assert_eq!(version_of("5.0"), Some(RenderAs::Bryce50));
+        assert_eq!(version_of("5.5"), Some(RenderAs::Bryce50));
         assert_eq!(version_of("5"), None);
     }
 

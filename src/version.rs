@@ -7,7 +7,7 @@
 //! `Program` is what a user names: one of the four programs, Bryce 5.5 among them. Bryce 5.5's
 //! renderer is Bryce 5.0's apart from the differences found by comparing the two programs' code
 //! (docs/manual/substrate.md, "Bryce 5.5"), so a render as 5.5 uses 5.0's rules (`RenderAs::Bryce50`)
-//! and is refused where 5.5 is known to differ.
+//! with a flag for what 5.5 does differently (`OpenChoices::five_five`: the moon's disc).
 
 /// Which program's behaviour a render reproduces.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -56,7 +56,7 @@ impl Program {
         }
     }
 
-    /// Bryce 5.5, whose known differences from 5.0 a render refuses.
+    /// Bryce 5.5, whose known differences from 5.0 a render draws (`OpenChoices::five_five`).
     pub fn is_five_five(self) -> bool {
         self == Program::Bryce55
     }
@@ -71,11 +71,6 @@ impl From<RenderAs> for Program {
         }
     }
 }
-
-/// Why a render as Bryce 5.5 of a sky with its own colours is refused: Bryce 5.5 draws the moon's
-/// disc, and takes the moon's phase, at half the angle Bryce 5.0 does (z·1.8·π/360 where 5.0 has
-/// z·1.8·π/180; the sun's disc is unchanged), and that is not drawn yet.
-pub const FIVE_FIVE_MOON_DISC: &str = "a sky with the sun's and moon's colours rendered as Bryce 5.5: Bryce 5.5 draws the moon's disc at half the angle Bryce 5.0 does, which is not drawn yet (render it as 5.0, or give the sky a plain colour)";
 
 #[cfg(test)]
 mod tests {

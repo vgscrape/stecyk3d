@@ -94,8 +94,8 @@ pub struct Described {
     /// The render as 5.0 ignores the structure code (Open): a description render is
     /// never a reproduction of a stored picture.
     pub ignore_structure_code: bool,
-    /// The version named is 5.5, rendered with 5.0's rules (`version`) and refused where 5.5 is
-    /// known to differ (`OpenChoices::five_five`).
+    /// The version named is 5.5, rendered with 5.0's rules (`version`) and 5.5's moon disc
+    /// (`OpenChoices::five_five`).
     pub five_five: bool,
 }
 

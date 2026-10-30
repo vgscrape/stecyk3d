@@ -2,7 +2,7 @@
 
 ## Goals
 
-- Draw Bryce 3.0, 3.1 and 5.0 scenes and match the pictures bit for bit, where the scene is supported.
+- Draw Bryce 3.0, 3.1, 5.0 and 5.5 scenes and match the pictures bit for bit, where the scene is supported. 5.5 is drawn with 5.0's rules and the differences found between the two programs (`version::Program`; the manual's "Bryce 5.5").
 - No external Rust dependencies. One library crate (`stecyk3d`) and three small programs. A Blender add-on (Python) drives the renderer as a child process.
 - Staged design: stages pass plain data in batches, so the same renderer can later run in a graphics-card form and give the same pictures.
 

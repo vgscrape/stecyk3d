@@ -62,7 +62,7 @@ struct Args {
     substrate: Option<PathBuf>,
     document: Option<PathBuf>,
     description: Option<PathBuf>,
-    /// `--as`: the program to render the document as (5.5 with 5.0's rules, refused where they differ).
+    /// `--as`: the program to render the document as (5.5: 5.0's rules and 5.5's moon disc).
     version: Option<Program>,
     picture: Option<PathBuf>,
     levels: Option<PathBuf>,
@@ -421,7 +421,7 @@ fn read_document(path: &Path, version: RenderAs, substrate: &substrate::Substrat
 }
 
 /// The choices of a document render of `program` over the substrate: as `picture::choices_from`, and
-/// for Bryce 5.5 the refusal of what 5.5 is known to do differently.
+/// for Bryce 5.5 what 5.5 is known to do differently (the moon's disc).
 fn program_choices(substrate: &substrate::Substrate, program: Program) -> OpenChoices {
     OpenChoices { five_five: program.is_five_five(), ..picture::choices_from(substrate) }
 }
