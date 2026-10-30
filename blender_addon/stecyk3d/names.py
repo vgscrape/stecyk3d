@@ -172,9 +172,52 @@ SKY5_SWITCHES2 = (  # bits of `sky5_flags2`
     (0x4, "Comets", "The star field's comets are drawn"),
     (0x1, "Haze as an older document's", "The haze reaches as far as in a document Bryce 5 took over from Bryce 3D"),
 )
+SUN_MOON_SWITCHES = (  # bits of `flags` that the sun's and the moon's discs and rings and the rainbow read, all
+    # programs; labels from the Sky Lab (Bryce 5's help). The numbers they read are in `discs` and `moon`.
+    (0x10000, "Halo rings", "A ring of 22 degrees round the sun and the moon: strength discs[4], width discs[5]. "
+     "The moon's ring has the moon glow's strength, so a bright zenith hides it"),
+    (0x2000000, "Secondary ring", "With Halo rings, also a ring of 46 degrees: width discs[6]"),
+    (0x100000, "Sun/Moon size", "The discs grow toward the horizon: Disk size discs[0], Horizon illusion discs[1] "
+     "(Program 5.0 reads neither without this switch)"),
+    (0x40000, "Moon phase", "The moon's disc and glow follow the phase numbers in `moon`"),
+    (0x20000, "Moon picture", "The moon's disc shows the moon picture your substrate holds (Bryce's own)"),
+    (0x4000, "Rainbow", "A rainbow, only while the sun is above the horizon: discs[7] to discs[14]"),
+)
 # group key -> (word, property name prefix, rows); the property is "<prefix><bit in hex>"
-GROUP_SWITCHES = {"sky": (("flags", "flag_", SKY_SWITCHES), ("flags", "sky5_flag_", SKY5_SWITCHES),
-                          ("sky5_flags2", "sky5_flag2_", SKY5_SWITCHES2))}
+GROUP_SWITCHES = {"sky": (("flags", "flag_", SKY_SWITCHES), ("flags", "flag_", SUN_MOON_SWITCHES),
+                          ("flags", "sky5_flag_", SKY5_SWITCHES), ("sky5_flags2", "sky5_flag2_", SKY5_SWITCHES2))}
+
+# Tooltips of sky settings whose effect is not what the name suggests (setting -> text). The numbers are the
+# renderer's (src/sky/sky_colours.rs, src/sky/stars.rs); docs/manual/blender.md has the long form.
+SKY_TIPS = {
+    "zenith": "The sky overhead. With Custom colours on, a ray sees it times 0.7 + 0.5*a, a = (1 + cosine of the "
+              "angle to the sun) / 2: 0.7 straight away from the sun, 0.95 square to it, 1.2 toward it. Its "
+              "brightest channel also fades the moon's glow (e^(-10*channel)) and a sky brighter than 0.26 after "
+              "that factor hides the stars",
+    "horizon": "The sky at the horizon, with Custom colours on. It reaches the sky only through the haze: at the "
+               "horizon it weighs 0.1 * haze. Seen times the same 0.7 to 1.2 as the zenith",
+    "plain": "The sky's one colour where the sky has no colours of its own (none of Glow look 1, Glow look 2 and "
+             "Custom colours, or Atmosphere off)",
+    "moon": "Read with Moon phase on: the phase angle in degrees (0 full, 180 new), earthshine (how bright the "
+            "dark side stays, 0 to 1), the turn of the lit side in degrees, the edge's softness (a power)",
+    "discs": "0 Disk size, 1 Horizon illusion (both with Sun/Moon size); 2 and 3 the haze's and the fog's share of "
+             "the sun's colour (with Haze/Fog takes the sun's colour); 4 ring strength, 5 ring width, 6 secondary "
+             "ring width (with Halo rings); 7 to 14 the rainbow's (with Rainbow, by day only)",
+    "moon_picture": "Not read: the moon's picture comes from your substrate (switch Moon picture on)",
+    "stars": "The star field: seed (a negative seed takes Bryce 5's catalogue), stars, comets",
+    "sky5_sun_glow_size": "Multiplies the strength of the sun's glow, its rings and the pull toward the sun's "
+                          "colour; it does not widen the glow",
+    "sky5_moon_glow_size": "Multiplies the strength of the moon's glow, the light round its disc and its rings; it "
+                           "does not widen the glow. The strength is e^(-10*Z) times this, Z the zenith's brightest "
+                           "channel (Custom colours; otherwise the sky Bryce gives for the sun's height): a zenith "
+                           "channel at 0.9 leaves 1/8000 of it",
+    "sky5_sun_disc": "Inside the sun's disc, adds 0.305 times this to each channel: brightness, not size",
+    "sky5_moon_disc": "Inside the moon's disc, adds 0.305 times this to each channel: brightness, not size (for "
+                      "size see Sun/Moon size). Not read with Moon picture on",
+    "sky5_star_intensity": "The stars' brightness (and, for random stars above 1, their size). Stars show only "
+                           "where the sky is dark: at full strength where the sky is black, none where its "
+                           "brightest channel reaches 0.26 (67 of 255); haze fades them toward the horizon",
+}
 SWITCH_PREFIXES = ("flag_", "sky5_flag_", "sky5_flag2_")
 # every switch view's identifier: shows and sets one bit of a word, stores nothing, so is no setting of its own
 SWITCH_VIEWS = frozenset(prefix + "%x" % bit for sets in GROUP_SWITCHES.values() for _, prefix, rows in sets

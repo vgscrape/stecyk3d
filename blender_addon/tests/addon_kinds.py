@@ -78,7 +78,7 @@ def build():
                                                           "a_tex": "Wood:0"}}}},
         objects,
         [{"name": "Tree", "matrix": moved(0.0, 0.0, 4.0), "tree": convert.tree_settings(TREE),
-          "material": "Wood", "leaves_material": "Wood"}])
+          "world": solids.own_transform(moved(0.0, 0.0, 4.0), units), "material": "Wood", "leaves_material": "Wood"}])
     description["textures"] = [pictures.picture_texture("Wood:0", 2, 2, [1.0, 0.0, 0.0, 1.0] * 2 + [0.0, 1.0, 0.0, 0.5] * 2)]
     description["camera"] = {"position": [0.0, 2.0, -10.0], "forward": [0.0, 0.0, 1.0], "up": [0.0, 1.0, 0.0],
                              "frame_angle": 1.0}
