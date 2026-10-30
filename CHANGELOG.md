@@ -8,6 +8,7 @@ Newest first.
 
 - The Rendered viewport no longer looks washed out until the first F12: the scene is set to the Raw view transform (look None, dithering 0) when the viewport first starts on it, and when a Bryce document is imported. Blender's Color Management panel is now shown with the Stecyk3D engine.
 - The Material tab's Texture components panel and the per-channel mix rows no longer stop with an error when a texture or mix comes through a node group.
+- Render Animation now draws the sky of each frame: keyframed or driven sky settings (haze, the sky's sun direction, and the rest) used to keep the values of the frame the render started at. Exact png writes one file per frame of an animation instead of overwriting one, and is saved where Blender saves its own output (a relative path on Windows with no drive and no `//` goes on the drive's root, as Blender's `Saved:` line shows; the Render tab now says where).
 
 ### Name
 
@@ -15,6 +16,9 @@ Newest first.
 
 ### Blender add-on
 
+- *Bryce material from the Blender shader* carries more of the Principled BSDF: Transmission Weight (Transparency, with the base colour as the Transparent colour), IOR (Refraction, for transmitted light), Specular IOR Level above 0.5 (Reflection, full at 1) and Specular Tint (Specular colour), with Diffusion keeping Blender's diffuse share under a glass or mirror. A Principled glass or mirror now converts to one. Inputs left at Blender's defaults give the same material as before; a set Coat, Sheen, Subsurface, Anisotropic, Thin Film or Diffuse Roughness is reported as not carried.
+- A terrain whose picture is not 16, 32, ... 1024 points a side (grid Auto) is no longer refused: it is resampled to the next of those sizes up (at most 1024), bilinear over the same area, and the render report says so and from what size.
+- Optional 90s finishing of the picture after the render, in a closed **Finishing** subpanel of the Render tab: a glow round the sun, moon and glowing objects, a lens flare when the sun or moon shows in the frame, one JPEG round trip at a chosen quality, and a palette of N colours with ordered dither (the GIF look). Not part of Bryce's renderer; all off by default, which leaves the picture Bryce's byte for byte, and Exact png always keeps the renderer's levels.
 - A scripting API (`api` module; [docs/manual/scripting.md](docs/manual/scripting.md)) for scripts that build and render Bryce scenes without reaching into the add-on: presets with fallbacks and channel overrides, materials from a colour, shapes and terrains made without the 3D cursor (a terrain from a height function, with the exact height of the drawn surface under a point), the sky and lights by setting name, renders to absolute paths, several looks rendered in one Blender or in parallel headless ones, and a labelled contact sheet. `examples/lake/` builds a moonlit lake scene with it.
 - F12 is faster: the add-on no longer pauses while it reads the renderer's picture, and it hands the picture to Blender much faster (a small scene at 640x480: about 1 s -> 0.1 s; at 1920x1440: about 13 s -> 0.5 s). Pictures are unchanged.
 - The Rendered viewport restarts at once when you move the view: the render going on is cancelled, and the new view's first pixels appear in a fraction of a second.
@@ -22,6 +26,7 @@ Newest first.
 - The Render tab's "Wash grain" setting is now called "Random grain", since it covers soft shadows, radius lights and jittered volumes as well as the wash. Saved files keep their setting.
 - Panels now offer the settings of the old Bryce interface: the full Render, World (sky), Object, Material and Texture settings, light key buttons and the Light Lab gradient starter, texture mapping, noise, filter, colours, phase and blend, and Mix Materials limits.
 - The World tab says where a cloud layer's texture goes (the Bryce Sky node's stratus or cumulus input, in the Shader Editor set to World), and its red lines wrap instead of being cut off. The manual has step-by-step instructions for changing the sky and giving a cloud layer a texture.
+- The World tab has a *Sun and moon* switch grid (Halo rings, Secondary ring, Sun/Moon size, Moon phase, Moon picture, Rainbow): the Discs and Moon numbers act only with these switches, which could not be reached before. Sky settings whose effect surprises have tooltips, and the manual's new *Sun, moon and stars* section explains them, with measurements: custom sky colours are seen at 0.7 to 1.2 of their value by the angle to the sun, Moon glow size is a strength that a bright zenith cancels, Moon disc is a brightness, and stars show only where the sky's brightest channel is below 0.26. The unread *Moon picture* image is no longer offered on the World tab. Pictures are unchanged.
 
 ### Renderer
 
