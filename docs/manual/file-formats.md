@@ -6,7 +6,7 @@
 |---|---|
 | `.br3` | Bryce 3D 3.0 / 3.1 scene (binary). Rendered with `--document`, or imported in Blender. |
 | `.br5` | Bryce 5.0 scene. Same use. |
-| `.mat` | Material preset library. |
+| `.mat` | Material preset library (also the Tree Lab's Leaves and Trunks libraries, which begin with blanks instead of `CCmF`). |
 | `.brt` | Texture preset library. |
 | Substrate (`substrate.bin` and `substrate.files/`) | Made by `stecyk3d-extract` from your own Bryce install, [see here](substrate.md). |
 | Description (`.json`) | What the Blender add-on writes for each render. |

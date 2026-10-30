@@ -8,6 +8,7 @@ Newest first.
 
 - The Rendered viewport no longer looks washed out until the first F12: the scene is set to the Raw view transform (look None, dithering 0) when the viewport first starts on it, and when a Bryce document is imported. Blender's Color Management panel is now shown with the Stecyk3D engine.
 - The Material tab's Texture components panel and the per-channel mix rows no longer stop with an error when a texture or mix comes through a node group.
+- Every preset of Bryce 5.0's material and texture libraries now applies. Material presets with a mixed channel (Distant Mountain, Whole Mountain, Riverbed, Wet Rock, Desert I, Walnut and others) and Tutorial Light Gel stopped with "float() argument must be ... not 'NoneType'"; texture presets whose saved result is not a number (most bump textures, such as techno city 2) stopped when added. The Tree Lab's libraries (Leaves, Trunks), which begin with blanks, now open, and the empty User libraries (Materials/User/User.mat, Textures/User/User.brt) open with no presets instead of being called damaged. Ion Damage is still refused (its texture has no component).
 
 ### Name
 
