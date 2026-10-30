@@ -9,6 +9,8 @@ Newest first.
 - The Rendered viewport no longer looks washed out until the first F12: the scene is set to the Raw view transform (look None, dithering 0) when the viewport first starts on it, and when a Bryce document is imported. Blender's Color Management panel is now shown with the Stecyk3D engine.
 - The Material tab's Texture components panel and the per-channel mix rows no longer stop with an error when a texture or mix comes through a node group.
 - Render Animation now draws the sky of each frame: keyframed or driven sky settings (haze, the sky's sun direction, and the rest) used to keep the values of the frame the render started at. Exact png writes one file per frame of an animation instead of overwriting one, and is saved where Blender saves its own output (a relative path on Windows with no drive and no `//` goes on the drive's root, as Blender's `Saved:` line shows; the Render tab now says where).
+- Trees grown from Tree Lab settings stand where their objects are; they all stood at the world origin. The renderer now reads an object's place from the fourth column of the matrix a description gives (it read the fourth row, which holds no place), so a tree or shape given only `matrix` moves too.
+- A tree whose Tree Lab settings grow a piece of wood with no thickness (a *Thickness* of 0, as a tree fresh from *Add > Bryce shape > Tree* has, or often a *Least* of 0) is refused with a message naming the tree and the setting. It turned the whole picture black.
 
 ### Name
 
