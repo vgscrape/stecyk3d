@@ -393,8 +393,10 @@ def check_sky_panel(module, bpy, scene, names):
     old = render.program
     render.program = "3.0"
     drawn = draw()
-    for bit, _l, _d in names.SKY_SWITCHES:
+    for bit, _l, _d in names.SKY_SWITCHES + names.SUN_MOON_SWITCHES:
         assert "flag_%x" % bit in drawn["props"], bit
+    assert "moon_picture" not in drawn["props"]  # not read: the moon's picture is the substrate's
+    assert "e^(-10*Z)" in sky.bl_rna.properties["sky5_moon_glow_size"].description
     assert "stecyk3d.sky_new" in drawn["ops"] and not any(k.startswith("sky5_flag") for k in drawn["props"])
     render.program = "5.0"
     sky.sky5 = True
@@ -420,6 +422,8 @@ def check_sky_panel(module, bpy, scene, names):
     assert (sky.flags & 0xFFFFFFFF) == before ^ 0x80
     sky.sky5_flag_80000000 = not sky.sky5_flag_80000000
     assert (sky.flags & 0xFFFFFFFF) == before ^ 0x80 ^ 0x80000000
+    sky.flag_10000 = not sky.flag_10000  # Halo rings
+    assert (sky.flags & 0xFFFFFFFF) == before ^ 0x80 ^ 0x80000000 ^ 0x10000
     sky.sky5_flag2_2 = True
     assert sky.sky5_flags2 & 2
     # the button: the new document's values for the program, nothing else
